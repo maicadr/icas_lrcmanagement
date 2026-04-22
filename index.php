@@ -25,8 +25,12 @@ while ($r = mysqli_fetch_assoc($result)) $rows[] = $r;
 // Status counts
 $counts = ['Available'=>0,'Borrowed'=>0,'Overdue'=>0,'Reserved'=>0];
 foreach ($rows as $r) {
-    $s = ucfirst(strtolower($r['book_status']));
-    if (isset($counts[$s])) $counts[$s]++;
+    if(!empty($r['returned']) && $r['returned'] == 1){
+      $counts['Returned']++;
+    }else{
+      $s = ucfirst(strtolower($r['book_status']));
+      if (isset($counts[$s])) $counts[$s]++;
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -66,8 +70,7 @@ foreach ($rows as $r) {
   .header-brand { display: flex; align-items: center; gap: 12px; }
   .header-logo {
     width: 42px; height: 42px; border-radius: 10px;
-    background: linear-gradient(135deg, #fbbf24, #f97316);
-    display: flex; align-items: center; justify-content: center; font-size: 20px;
+    overflow: hidden; flex-shrink: 0;
   }
   .header-title { font-family: 'Lora', serif; font-size: 20px; font-weight: 700; }
   .header-sub   { font-size: 11.5px; color: var(--muted); margin-top: 1px; }
@@ -266,7 +269,10 @@ foreach ($rows as $r) {
 
 <header>
   <div class="header-brand">
-    <div class="header-logo">📋</div>
+    <div class="header-logo">
+      <img src="https://scontent.fceb2-1.fna.fbcdn.net/v/t1.15752-9/655639216_902892782620982_679713768952904685_n.jpg?_nc_cat=108&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeGtmif84tBQGVhqMSMLc7-H8N-b6gQgzqjw35vqBCDOqA57yzk-L4KqAaEZF7QcCi-yqMYBAM_i9VCiZSMGHXkC&_nc_ohc=31kf0tEGRjkQ7kNvwF0PHLr&_nc_oc=AdrpM6rGMxUpupabTUwe-OkO-k8tbbEOvbpi6w8pc-O0gD06va8h3qa-JNvSpmPDZ8w&_nc_zt=23&_nc_ht=scontent.fceb2-1.fna&_nc_ss=7a3a8&oh=03_Q7cD5AGhronN_QuIoMGtujo28WGDJarngAlGnddgEQQXda_DrA&oe=6A0D97F4"
+       alt="LRC Logo" style="width:100%; height:100%; object-fit:cover; border-radius:10px;">
+    </div>
     <div>
       <div class="header-title">LRC Management</div>
       <div class="header-sub">Learning Resource Center — Book Records</div>
@@ -285,7 +291,7 @@ foreach ($rows as $r) {
     <?php if ($msg === 'added'):    ?><div class="alert alert-success">Book successfully added.</div><?php endif; ?>
     <?php if ($msg === 'updated'):  ?><div class="alert alert-success">Book record updated.</div><?php endif; ?>
     <?php if ($msg === 'deleted'):  ?><div class="alert alert-danger">Book record deleted.</div><?php endif; ?>
-    <?php if ($msg === 'deleted_all'): ?><div class="alert alert-danger">All book records deleted.</div><?php endif; ?>
+    <?php if ($msg === 'returned'): ?><div class="alert alert-success">Book returned successfully.</div><?php endif; ?>
   <?php endif; ?>
 
   <!-- Stats -->
@@ -294,7 +300,7 @@ foreach ($rows as $r) {
       <div><div class="sc-num"><?= $total ?></div><div class="sc-lbl">Total Records</div></div>
     </div>
     <div class="stat-chip sc-avail">
-      <div><div class="sc-num"><?= $counts['Available'] ?></div><div class="sc-lbl">Available</div></div>
+      <div><div class="sc-num"><?= $counts['Returned'] ?></div><div class="sc-lbl">Returned</div></div>
     </div>
     <div class="stat-chip sc-borrow">
       <div><div class="sc-num"><?= $counts['Borrowed'] ?></div><div class="sc-lbl">Borrowed</div></div>
@@ -307,7 +313,7 @@ foreach ($rows as $r) {
   <div class="toolbar">
     <div class="toolbar-left">
       <a href="delete_all.php" class="btn btn-red"
-         onclick="return confirm('Delete ALL book records? This cannot be undone.')">🗑 Delete All</a>
+         onclick="return confirm('Delete ALL book records? This cannot be undone.')">Delete All</a>
     </div>
     <form method="GET" action="index.php" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
       <div class="search-wrap">
@@ -365,9 +371,15 @@ foreach ($rows as $r) {
           <td class="td-muted"><?= htmlspecialchars($row['book_author']) ?></td>
           <td class="td-muted" style="font-size:12.5px"><?= htmlspecialchars($row['book_genre']) ?></td>
           <td>
-            <span class="badge <?= $badgeClass ?>"><?= htmlspecialchars($row['book_status']) ?></span>
-            <?php if ($isOverdue): ?>
-              <span style="font-size:10.5px;color:var(--red);display:block;margin-top:3px">⚠ Overdue</span>
+            <?php if ($row['returned']): ?>
+              <span class="badge" style="background:rgba(52,211,153,.1);color:var(--green);border:1px solid rgba(52,211,153,.2);">
+                Returned
+              </span>
+            <?php else: ?>
+              <span class="badge <?= $badgeClass ?>"><?= htmlspecialchars($row['book_status']) ?></span>
+              <?php if ($isOverdue): ?>
+                <span style="font-size:10.5px;color:var(--red);display:block;margin-top:3px">⚠ Overdue</span>
+              <?php endif; ?>
             <?php endif; ?>
           </td>
           <td class="td-borrower">
@@ -398,9 +410,17 @@ foreach ($rows as $r) {
           </td>
           <td onclick="event.stopPropagation()">
             <div class="actions">
-              <a href="edit.php?id=<?= $row['id'] ?>" class="btn btn-gold btn-sm btn-icon" title="Edit">Edit</a>
+              <?php if ($row['book_status'] === 'Borrowed' && !$row['returned']): ?>
+                <a href="return.php?id=<?= $row['id'] ?>" class="btn btn-green btn-sm btn-icon"
+                    title="Mark as Returned"
+                    onclick="return confirm('Mark this book as returned?')">↩️</a>
+              <?php elseif ($row['returned']): ?>
+                <span class="btn btn-sm btn-icon" style="background:rgba(52,211,153,.1);color:var(--green);
+                      border:1px solid rgba(52,211,153,.2);cursor:default;" title="Returned">✅</span>
+              <?php endif; ?>
+              <a href="edit.php?id=<?= $row['id'] ?>" class="btn btn-gold btn-sm btn-icon" title="Edit">✏️</a>
               <a href="delete.php?id=<?= $row['id'] ?>" class="btn btn-red btn-sm btn-icon" title="Delete"
-                 onclick="return confirm('Delete this record?')">🗑️</a>
+                  onclick="return confirm('Delete this record?')">🗑️</a>
             </div>
           </td>
         </tr>
@@ -481,6 +501,12 @@ function openRecord(row) {
   const badges = {available:'badge-available', borrowed:'badge-borrowed', overdue:'badge-overdue', reserved:'badge-reserved'};
   const cls    = badges[status.toLowerCase()] || 'badge-borrowed';
   document.getElementById('vStatus').innerHTML = `<span class="badge ${cls}">${status}</span>`;
+
+  // Show returned badge in modal
+  const borrowerSection = document.getElementById('vBorrowerSection');
+  if (row.returned == 1) {
+    document.getElementById('vStatus').innerHTML = `<span class="badge badge-available">Returned</span>`;
+  }
 
   document.getElementById('vSName').textContent  = row.student_name   || '—';
   document.getElementById('vSBlock').textContent = row.student_block  || '—';

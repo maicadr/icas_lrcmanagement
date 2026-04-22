@@ -81,8 +81,7 @@ $needsBorrower = in_array($data['book_status'], ['Borrowed','Reserved','Overdue'
   }
   .header-logo {
     width: 42px; height: 42px; border-radius: 10px;
-    background: linear-gradient(135deg, var(--primary), #7c3aed);
-    display: flex; align-items: center; justify-content: center; font-size: 20px;
+    overflow: hidden; flex-shrink: 0;
   }
   .header-title { font-family: 'Lora', serif; font-size: 20px; font-weight: 700; }
   .header-sub   { font-size: 11.5px; color: var(--muted); margin-top: 1px; }
@@ -245,7 +244,10 @@ $needsBorrower = in_array($data['book_status'], ['Borrowed','Reserved','Overdue'
 <body>
 
 <header>
-  <div class="header-logo">📚</div>
+  <div class="header-logo">
+    <img src="https://scontent.fceb2-1.fna.fbcdn.net/v/t1.15752-9/655639216_902892782620982_679713768952904685_n.jpg?_nc_cat=108&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeGtmif84tBQGVhqMSMLc7-H8N-b6gQgzqjw35vqBCDOqA57yzk-L4KqAaEZF7QcCi-yqMYBAM_i9VCiZSMGHXkC&_nc_ohc=31kf0tEGRjkQ7kNvwF0PHLr&_nc_oc=AdrpM6rGMxUpupabTUwe-OkO-k8tbbEOvbpi6w8pc-O0gD06va8h3qa-JNvSpmPDZ8w&_nc_zt=23&_nc_ht=scontent.fceb2-1.fna&_nc_ss=7a3a8&oh=03_Q7cD5AGhronN_QuIoMGtujo28WGDJarngAlGnddgEQQXda_DrA&oe=6A0D97F4"
+       alt="LRC Logo" style="width:100%; height:100%; object-fit:cover; border-radius:10px;">
+  </div>
   <div>
     <div class="header-title">LRC Management</div>
     <div class="header-sub">Learning Resource Center — Book Records</div>
