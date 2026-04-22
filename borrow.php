@@ -105,13 +105,31 @@ unset($sb);
 
 usort($shelf_books, function($a, $b) { return $b['borrow_count'] - $a['borrow_count']; });
 
-if ($max_borrows > 0) {
-    $borrowed_books = array_values(array_filter($shelf_books, function($s) { return $s['borrow_count'] > 0; }));
-    usort($borrowed_books, function($a, $b) { return $b['borrow_count'] - $a['borrow_count']; });
-    $center     = array_shift($borrowed_books);
+// Separate new books (no borrows) from popular books (has borrows)
+// "New" = recently added = high ID, no borrow history
+$new_books     = array_values(array_filter($shelf_books, fn($s) => $s['borrow_count'] === 0));
+$popular_books = array_values(array_filter($shelf_books, fn($s) => $s['borrow_count'] >  0));
+
+// Sort new books: newest first (highest ID)
+usort($new_books, fn($a, $b) => $b['id'] - $a['id']);
+
+// Sort popular books: most borrowed first
+usort($popular_books, fn($a, $b) => $b['borrow_count'] - $a['borrow_count']);
+
+if (count($popular_books) > 0 || count($new_books) > 0) {
+    // Center = most borrowed popular book (or first new book if no popular)
+    if (count($popular_books) > 0) {
+        $center    = array_shift($popular_books);
+        $remaining = array_merge($popular_books, $new_books);
+    } else {
+        $center    = array_shift($new_books);
+        $remaining = $new_books;
+    }
+
+    // Scatter remaining alternately left and right of center
     $left_side  = [];
     $right_side = [];
-    foreach ($borrowed_books as $i => $book) {
+    foreach ($remaining as $i => $book) {
         if ($i % 2 === 0) $right_side[] = $book;
         else              $left_side[]  = $book;
     }
@@ -196,7 +214,7 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
   .no-results { grid-column:1/-1; text-align:center; padding:50px 20px; color:var(--muted); font-size:14px; }
   .carousel-section { margin-bottom:36px; }
   .carousel-section h3 { font-family:'Lora',serif; font-size:18px; font-weight:700; color:var(--text); margin-bottom:16px; display:flex; align-items:center; gap:10px; }
-  .carousel-wrap { position:relative; padding:24px 40px; margin:0 -40px; }
+  .carousel-wrap { position:relative; padding:24px 52px; margin:0 -20px; overflow:visible:}
   .carousel-track-outer { overflow:visible; }
   .carousel-track { display:flex; gap:16px; transition:transform .4s cubic-bezier(.25,.8,.25,1); will-change:transform; }
   .carousel-item { flex:0 0 140px; cursor:pointer; border-radius:var(--radius-lg); overflow:visible; position:relative; height:210px; border:1px solid var(--border); transition:transform .25s,box-shadow .25s; }
@@ -208,10 +226,6 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
   .carousel-overlay { position:absolute; inset:0; border-radius:var(--radius-lg); background:linear-gradient(to top,rgba(0,0,0,.88) 0%,transparent 55%); display:flex; flex-direction:column; justify-content:flex-end; padding:12px 10px; pointer-events:none; }
   .carousel-overlay .co-title  { font-size:12px; font-weight:700; color:#fff; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
   .carousel-overlay .co-author { font-size:10.5px; color:rgba(255,255,255,.6); margin-top:3px; }
-  .carousel-btn { position:absolute; top:50%; transform:translateY(-50%); width:36px; height:36px; border-radius:50%; background:rgba(15,26,46,.9); border:1px solid var(--border); color:var(--text); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:20; transition:all .2s; backdrop-filter:blur(6px); }
-  .carousel-btn:hover { background:var(--primary); border-color:var(--primary); }
-  .carousel-btn.prev { left:0; }
-  .carousel-btn.next { right:0; }
   .modal-overlay { display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,.75); backdrop-filter:blur(8px); align-items:center; justify-content:center; padding:16px; }
   .modal-overlay.open { display:flex; animation:fadeIn .2s; }
   @keyframes fadeIn  { from{opacity:0} to{opacity:1} }
@@ -287,14 +301,14 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
            alt="LRC Logo" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">
     </div>
     <div>
-      <div class="header-title">LRC Kiosk</div>
+      <div class="header-title">LRC</div>
       <div class="header-sub">Learning Resource Center — Tap a book to borrow</div>
     </div>
   </div>
   <div class="header-nav">
-    <a href="index.php"   class="btn btn-ghost">📋 Book Record</a>
-    <a href="borrow.php"  class="btn btn-ghost btn-active">📚 Student Kiosk</a>
-    <a href="shelves.php" class="btn btn-ghost">🗄️ Shelf Manager</a>
+    <a href="index.php"   class="btn btn-ghost">Book Record</a>
+    <a href="borrow.php"  class="btn btn-ghost btn-active">Student Kiosk</a>
+    <a href="shelves.php" class="btn btn-ghost">Shelf Manager</a>
   </div>
 </header>
 
@@ -302,7 +316,7 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
 
   <?php if ($success): ?>
     <div class="success-banner">
-      <div class="success-icon">✅</div>
+      <div class="success-icon"></div>
       <div>
         <div class="success-title"><?= htmlspecialchars($success) ?></div>
         <div class="success-sub">The borrow record has been saved. Return by your due date.</div>
@@ -312,7 +326,7 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
 
   <?php if ($shelf_count === 0): ?>
     <div class="empty-kiosk">
-      <div class="e-icon">📭</div>
+      <div class="e-icon"></div>
       <h3>No Books on Display Yet</h3>
       <p>Ask the librarian to add books to the shelf display.</p>
       <a href="shelves.php" class="btn btn-primary" style="margin-top:20px">Go to Shelf Manager →</a>
@@ -333,16 +347,16 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
 
     <?php if (count($carousel_books) > 0): ?>
     <div class="carousel-section" id="carouselSection">
-      <h3>🔥 Most Popular</h3>
+      <h3>Featured Books</h3>
       <div class="carousel-wrap">
-        <?php if (count($carousel_books) > 1): ?>
-          <button class="carousel-btn prev" onclick="carouselMove(-1)">‹</button>
-        <?php endif; ?>
         <div class="carousel-track-outer">
           <div class="carousel-track" id="carouselTrack">
             <?php foreach ($carousel_books as $sb):
-              $emoji      = $genreEmoji[$sb['shelf_genre']] ?? '📚';
+              $emoji      = $genreEmoji[$sb['shelf_genre']] ?? '';
               $isFeatured = trim(strtolower($sb['shelf_title'])) === trim(strtolower($most_borrowed_title));
+              $isNew = $sb['borrow_count'] === 0 
+                    && !empty($sb['date_added']) 
+                    && $sb['date_added'] === date('Y-m-d');
               $safeTitle  = htmlspecialchars($sb['shelf_title'],  ENT_QUOTES);
               $safeAuthor = htmlspecialchars($sb['shelf_author'], ENT_QUOTES);
               $safeGenre  = htmlspecialchars($sb['shelf_genre'],  ENT_QUOTES);
@@ -359,6 +373,16 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
                  data-desc="<?= $safeDesc ?>"
                  data-stock="<?= $stock ?>"
                  onclick="openBorrowModal(this)">
+              <?php if ($isNew): ?>
+                <div style="position:absolute;top:8px;left:8px;z-index:5;
+                              background:linear-gradient(135deg,#34d399,#059669);
+                              color:#000;font-size:9px;font-weight:800;
+                              letter-spacing:.8px;text-transform:uppercase;
+                              padding:3px 8px;border-radius:20px;
+                              box-shadow:0 2px 8px rgba(52,211,153,.4);">
+                      NEW
+                </div>
+              <?php endif; ?>
               <?php if (!empty($sb['shelf_cover'])): ?>
                 <img src="<?= $safeCover ?>" alt="<?= $safeTitle ?>" onerror="this.style.display='none'">
               <?php else: ?>
@@ -370,20 +394,17 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
                 <div class="co-title"><?= htmlspecialchars($sb['shelf_title']) ?></div>
                 <div class="co-author">by <?= htmlspecialchars($sb['shelf_author']) ?></div>
                 <div style="margin-top:6px;font-size:10px;font-weight:700;
-                            background:<?= $isFeatured ? 'rgba(251,191,36,.25)' : 'rgba(255,255,255,.1)' ?>;
-                            color:<?= $isFeatured ? '#fbbf24' : 'rgba(255,255,255,.8)' ?>;
-                            border:1px solid <?= $isFeatured ? 'rgba(251,191,36,.4)' : 'rgba(255,255,255,.15)' ?>;
+                            background:<?= $isFeatured ? 'rgba(251,191,36,.25)' : 'rgba(255,255,255,.08)' ?>;
+                            color:<?= $isFeatured ? '#fbbf24' : 'rgba(255,255,255,.7)' ?>;
+                            border:1px solid <?= $isFeatured ? 'rgba(251,191,36,.4)' : 'rgba(255,255,255,.12)' ?>;
                             border-radius:20px;padding:2px 9px;display:inline-block;">
-                  <?= $isFeatured ? '🔥' : '📖' ?> <?= $sb['borrow_count'] ?> <?= $sb['borrow_count'] === 1 ? 'borrow' : 'borrows' ?>
+                  <?= $isFeatured ? 'Trending' : ('' . htmlspecialchars($sb['shelf_genre'])) ?>
                 </div>
               </div>
             </div>
             <?php endforeach; ?>
           </div>
         </div>
-        <?php if (count($carousel_books) > 1): ?>
-          <button class="carousel-btn next" onclick="carouselMove(1)">›</button>
-        <?php endif; ?>
       </div>
     </div>
     <?php endif; ?>
@@ -392,14 +413,14 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
       <div class="genre-tab active" onclick="filterByGenre('all', this)">All Books</div>
       <?php foreach ($genres as $g): ?>
         <div class="genre-tab" onclick="filterByGenre(<?= json_encode($g) ?>, this)">
-          <?= ($genreEmoji[$g] ?? '📄') . ' ' . htmlspecialchars($g) ?>
+          <?= ($genreEmoji[$g] ?? '') . ' ' . htmlspecialchars($g) ?>
         </div>
       <?php endforeach; ?>
     </div>
 
     <div class="books-grid" id="booksGrid">
       <?php foreach ($shelf_books as $sb):
-        $emoji = $genreEmoji[$sb['shelf_genre']] ?? '📚';
+        $emoji = $genreEmoji[$sb['shelf_genre']] ?? '';
         $stock = (int)($sb['shelf_stock'] ?? 1);
       ?>
       <div class="book-card"
@@ -431,11 +452,11 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
             <span class="bm-genre"><?= $emoji ?> <?= htmlspecialchars($sb['shelf_genre']) ?></span>
             <?php if ($stock > 0): ?>
               <span style="font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:20px;background:rgba(52,211,153,.1);color:#34d399;border:1px solid rgba(52,211,153,.2);">
-                ✓ Available · <?= $stock ?> <?= $stock === 1 ? 'copy' : 'copies' ?>
+                Available · <?= $stock ?> <?= $stock === 1 ? 'copy' : 'copies' ?>
               </span>
             <?php else: ?>
               <span style="font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:20px;background:rgba(248,113,113,.1);color:#f87171;border:1px solid rgba(248,113,113,.2);">
-                ✕ Out of Stock
+                Out of Stock
               </span>
             <?php endif; ?>
           </div>
@@ -468,10 +489,10 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
     <div class="modal-body">
       <div id="modalErrors"></div>
       <div class="step-panel active" id="step0">
-        <div class="step-heading">📖 About this Book</div>
+        <div class="step-heading">About this Book</div>
         <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;font-size:14px;color:var(--muted);line-height:1.7;" id="descBox"><em>No description available.</em></div>
         <div style="display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;">
-          <span style="font-size:20px;">📦</span>
+          <span style="font-size:20px;"></span>
           <div>
             <div style="font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);font-weight:700;margin-bottom:3px;">Availability</div>
             <div id="stockDisplay" style="font-size:15px;font-weight:700;">—</div>
@@ -489,7 +510,7 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
         <input type="hidden" name="student_block"  id="fStudentBlock">
         <input type="hidden" name="student_number" id="fStudentNumber">
         <div class="step-panel" id="step1">
-          <div class="step-heading">👤 Who are you?</div>
+          <div class="step-heading">Who are you?</div>
           <div class="field-group">
             <label>Full Name <span class="req">*</span></label>
             <input type="text" id="sName" placeholder="e.g. Juan dela Cruz" autocomplete="name">
@@ -506,7 +527,7 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
           </div>
         </div>
         <div class="step-panel" id="step2">
-          <div class="step-heading">📅 Borrow Schedule</div>
+          <div class="step-heading">Borrow Schedule</div>
           <div class="date-range-viz">
             <div class="drv-item"><div class="drv-label">Borrow Date</div><div class="drv-date" id="vizBorrowDate">—</div><div class="drv-sub">Today</div></div>
             <div class="drv-sep">→</div>
@@ -526,9 +547,9 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
           </div>
         </div>
         <div class="step-panel" id="step3">
-          <div class="step-heading">✅ Review &amp; Confirm</div>
+          <div class="step-heading">Review &amp; Confirm</div>
           <div class="summary-card">
-            <div class="sc-header">📚 Book Details</div>
+            <div class="sc-header">Book Details</div>
             <div class="sc-body">
               <div class="sc-row"><span class="sc-key">Title</span><span class="sc-val" id="sumTitle">—</span></div>
               <div class="sc-row"><span class="sc-key">Author</span><span class="sc-val" id="sumAuthor">—</span></div>
@@ -536,7 +557,7 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
             </div>
           </div>
           <div class="summary-card">
-            <div class="sc-header">👤 Borrower</div>
+            <div class="sc-header">Borrower</div>
             <div class="sc-body">
               <div class="sc-row"><span class="sc-key">Name</span><span class="sc-val" id="sumName">—</span></div>
               <div class="sc-row"><span class="sc-key">Block</span><span class="sc-val" id="sumBlock">—</span></div>
@@ -544,7 +565,7 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
             </div>
           </div>
           <div class="summary-card">
-            <div class="sc-header">📅 Schedule</div>
+            <div class="sc-header">Schedule</div>
             <div class="sc-body">
               <div class="sc-row"><span class="sc-key">Borrow Date</span><span class="sc-val" id="sumBorrow">—</span></div>
               <div class="sc-row">
@@ -673,6 +694,27 @@ function applyFilters(q,genre) { const cards=document.querySelectorAll('#booksGr
 let carouselIndex=0; const itemWidth=156;
 function carouselMove(dir) { const track=document.getElementById('carouselTrack'); if(!track) return; const items=track.querySelectorAll('.carousel-item'); const visible=Math.floor(track.parentElement.offsetWidth/itemWidth); const maxIndex=Math.max(0,items.length-visible); carouselIndex=Math.min(Math.max(carouselIndex+dir,0),maxIndex); track.style.transform=`translateX(-${carouselIndex*itemWidth}px)`; }
 window.addEventListener('load',()=>{ const track=document.getElementById('carouselTrack'); if(!track) return; const items=track.querySelectorAll('.carousel-item'); const visible=Math.floor(track.parentElement.offsetWidth/itemWidth); let featuredIdx=0; items.forEach((item,i)=>{ if(item.classList.contains('featured')) featuredIdx=i; }); carouselIndex=Math.max(0,featuredIdx-Math.floor(visible/2)); track.style.transform=`translateX(-${carouselIndex*itemWidth}px)`; });
+
+document.addEventListener('DOMContentLoaded', () => {
+  const outer = document.querySelector('.carousel-track-outer');
+  if (!outer) return;
+  let scrollAccum = 0;
+  outer.addEventListener('wheel', e => {
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+      e.preventDefault();
+      scrollAccum += e.deltaX;
+      if (Math.abs(scrollAccum) < 80) return; // threshold before moving
+      const track = document.getElementById('carouselTrack');
+      if (!track) return;
+      const items    = track.querySelectorAll('.carousel-item');
+      const visible  = Math.floor(outer.offsetWidth / itemWidth);
+      const maxIndex = Math.max(0, items.length - visible);
+      carouselIndex  = Math.min(Math.max(carouselIndex + (scrollAccum > 0 ? 1 : -1), 0), maxIndex);
+      track.style.transform = `translateX(-${carouselIndex * itemWidth}px)`;
+      scrollAccum = 0;
+    }
+  }, { passive: false });
+});
 </script>
 </body>
 </html>

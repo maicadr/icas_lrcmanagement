@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $d = mysqli_real_escape_string($conn, $shelf_desc);
         $s = (int)($_POST['shelf_stock']?? 1 );
         $sql = "UPDATE shelf_books SET shelf_title='$t', shelf_author='$a', shelf_genre='$g', shelf_cover='$c', shelf_desc='$d', shelf_stock=$s WHERE id=$edit_id";
-        $sql = "INSERT INTO shelf_books (shelf_title, shelf_author, shelf_genre, shelf_cover, shelf_desc, shelf_stock) VALUES ('$t','$a','$g','$c','$d', " . (int)($_POST['shelf_stock']?? 1) . ")";
+        $sql = "INSERT INTO shelf_books (shelf_title, shelf_author, shelf_genre, shelf_cover, shelf_desc, shelf_stock, date_added) VALUES ('$t','$a','$g','$c','$d', " . (int)($_POST['shelf_stock']?? 1) . ", CURDATE())";
         if (mysqli_query($conn, $sql)) {
             $success = 'Book added to shelf display!';
         } else {
@@ -39,6 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $shelf_genre  = trim($_POST['shelf_genre']  ?? '');
     $shelf_cover  = trim($_POST['shelf_cover']  ?? '');
     $shelf_desc   = trim($_POST['shelf_desc']   ?? '');
+    $shelf_stock = (int)($_POST['shelf_stock'] ?? 1);
 
     if ($shelf_title  === '') $errors[] = 'Book title is required.';
     if ($shelf_author === '') $errors[] = 'Author is required.';
@@ -50,7 +51,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $g = mysqli_real_escape_string($conn, $shelf_genre);
         $c = mysqli_real_escape_string($conn, $shelf_cover);
         $d = mysqli_real_escape_string($conn, $shelf_desc);
-        $sql = "UPDATE shelf_books SET shelf_title='$t', shelf_author='$a', shelf_genre='$g', shelf_cover='$c', shelf_desc='$d' WHERE id=$edit_id";
+        $s = $shelf_stock;
+        $sql = "UPDATE shelf_books SET shelf_title='$t', shelf_author='$a', shelf_genre='$g', shelf_cover='$c', shelf_desc='$d', shelf_stock=$s WHERE id=$edit_id";
         if (mysqli_query($conn, $sql)) {
             header('Location: shelves.php?msg=updated');
             exit;

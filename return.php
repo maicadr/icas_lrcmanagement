@@ -9,11 +9,9 @@ if ($id > 0) {
     $row = mysqli_fetch_assoc($result);
 
     if ($row) {
-        // Mark as returned
-        mysqli_query($conn, "UPDATE books SET returned = 1, book_status = 'Available' WHERE id = $id");
-
         // Restore stock in shelf_books
         $title = mysqli_real_escape_string($conn, $row['book_title']);
+        mysqli_query($conn, "UPDATE books SET returned = 1, book_status = 'Available' WHERE id = $id");
         mysqli_query($conn, "UPDATE shelf_books SET shelf_stock = shelf_stock + 1 WHERE shelf_title = '$title'");
     }
 }
