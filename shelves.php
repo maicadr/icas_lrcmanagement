@@ -692,6 +692,7 @@ function closeModal() {
   document.body.style.overflow = '';
 }
 
+
 document.getElementById('btnModalClose').addEventListener('click',  closeModal);
 document.getElementById('btnModalCancel').addEventListener('click', closeModal);
 modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
