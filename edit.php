@@ -109,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
 
 <header>
-  <div class="logo">📚</div>
+  <div class="logo"></div>
   <div>
     <h1>LRC Management</h1>
     <p>Learning Resource Center — Book Records</p>
@@ -129,7 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <?php endif; ?>
 
   <div class="card">
-    <h2>✏️ Edit Book Record</h2>
+    <h2>Edit Book Record</h2>
     <form method="POST" action="edit.php?id=<?= $id ?>">
 
       <div class="form-row">
