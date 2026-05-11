@@ -300,19 +300,19 @@ foreach ($rows as $r) {
   <!-- Stats -->
   <div class="stat-row">
     <div class="stat-chip sc-total">
-      <div class="sc-icon">📚</div>
+      <div class="sc-icon"></div>
       <div><div class="sc-num"><?= $total ?></div><div class="sc-lbl">Total Records</div></div>
     </div>
     <div class="stat-chip sc-avail">
-      <div class="sc-icon">✅</div>
+      <div class="sc-icon"></div>
       <div><div class="sc-num"><?= $counts['Returned'] ?></div><div class="sc-lbl">Returned</div></div>
     </div>
     <div class="stat-chip sc-borrow">
-      <div class="sc-icon">📖</div>
+      <div class="sc-icon"></div>
       <div><div class="sc-num"><?= $counts['Borrowed'] ?></div><div class="sc-lbl">Borrowed</div></div>
     </div>
     <div class="stat-chip sc-overdue">
-      <div class="sc-icon">⚠️</div>
+      <div class="sc-icon"></div>
       <div><div class="sc-num"><?= $counts['Overdue'] ?></div><div class="sc-lbl">Overdue</div></div>
     </div>
   </div>
@@ -434,7 +434,7 @@ foreach ($rows as $r) {
     </table>
     <?php else: ?>
     <div class="empty-state">
-      <div class="icon">📚</div>
+      <div class="icon"></div>
       <p><?= $search !== '' ? 'No records matched your search.<br>Try different keywords.' : 'No book records yet.<br>Use the <strong>Student Kiosk</strong> to add borrow records.' ?></p>
     </div>
     <?php endif; ?>
@@ -483,8 +483,8 @@ foreach ($rows as $r) {
       </div>
     </div>
     <div class="modal-footer">
-      <a href="#" class="btn btn-gold btn-sm" id="vEditLink">✏️ Edit</a>
-      <button class="btn btn-red btn-sm" onclick="showDelConfirm()">🗑️ Delete</button>
+      <a href="#" class="btn btn-gold btn-sm" id="vEditLink">Edit</a>
+      <button class="btn btn-red btn-sm" onclick="showDelConfirm()">Delete</button>
       <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="closeModal()">Close</button>
     </div>
   </div>
