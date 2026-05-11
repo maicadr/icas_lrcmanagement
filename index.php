@@ -23,7 +23,7 @@ $rows   = [];
 while ($r = mysqli_fetch_assoc($result)) $rows[] = $r;
 
 // Status counts
-$counts = ['Available'=>0,'Borrowed'=>0,'Overdue'=>0,'Reserved'=>0];
+$counts = ['Available'=>0,'Borrowed'=>0,'Overdue'=>0,'Reserved'=>0,'Returned'=>0];
 foreach ($rows as $r) {
     if(!empty($r['returned']) && $r['returned'] == 1){
       $counts['Returned']++;
@@ -68,10 +68,7 @@ foreach ($rows as $r) {
     position: sticky; top: 0; z-index: 100;
   }
   .header-brand { display: flex; align-items: center; gap: 12px; }
-  .header-logo {
-    width: 42px; height: 42px; border-radius: 10px;
-    overflow: hidden; flex-shrink: 0;
-  }
+  .header-logo { width: 42px; height: 42px; border-radius: 10px; overflow: hidden; flex-shrink: 0; }
   .header-title { font-family: 'Lora', serif; font-size: 20px; font-weight: 700; }
   .header-sub   { font-size: 11.5px; color: var(--muted); margin-top: 1px; }
   .header-nav   { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -154,22 +151,20 @@ foreach ($rows as $r) {
     color: var(--muted); white-space: nowrap; border-bottom: 1px solid var(--border);
     user-select: none;
   }
-  thead th.th-borrower { color: var(--primary); }
 
   tbody tr { border-bottom: 1px solid var(--border); transition: background .15s; cursor: pointer; }
   tbody tr:last-child { border-bottom: none; }
   tbody tr:hover { background: rgba(79,142,247,.04); }
 
   tbody td { padding: 12px 16px; font-size: 13.5px; vertical-align: middle; }
-  td.td-borrower { background: rgba(79,142,247,.02); }
-  tbody tr:hover td.td-borrower { background: rgba(79,142,247,.06); }
 
-  .td-num { color: var(--muted); font-size: 12px; font-weight: 600; }
+  .td-num   { color: var(--muted); font-size: 12px; font-weight: 600; }
   .td-title { font-weight: 700; color: var(--text); }
   .td-muted { color: var(--muted); font-size: 13px; }
 
-  .student-name { font-weight: 700; color: var(--primary); font-size: 13px; }
-  .student-sub  { font-size: 11.5px; color: var(--muted); margin-top: 1px; }
+  /* FIX: student name now uses plain text color, no teal highlight */
+  .student-name { font-weight: 600; color: var(--text); font-size: 13px; }
+  .student-sub  { font-size: 12px; color: var(--muted); margin-top: 1px; }
 
   .badge {
     display: inline-flex; align-items: center; gap: 5px;
@@ -188,7 +183,7 @@ foreach ($rows as $r) {
   .empty-state .icon { font-size: 52px; margin-bottom: 14px; }
   .empty-state p { font-size: 15px; line-height: 1.7; }
 
-  /* ── VIEW RECORD MODAL ── */
+  /* VIEW RECORD MODAL */
   .modal-overlay {
     display: none; position: fixed; inset: 0; z-index: 1000;
     background: rgba(0,0,0,.75); backdrop-filter: blur(8px);
@@ -221,7 +216,6 @@ foreach ($rows as $r) {
   .modal-close:hover { background: rgba(255,255,255,.12); color: var(--text); }
   .modal-body { padding: 22px; overflow-y: auto; }
 
-  /* Record detail rows */
   .rec-section { margin-bottom: 18px; }
   .rec-section-title {
     font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
@@ -242,7 +236,6 @@ foreach ($rows as $r) {
     background: var(--card);
   }
 
-  /* Delete confirm */
   .del-confirm {
     display: none; background: rgba(248,113,113,.06); border: 1px solid rgba(248,113,113,.2);
     border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;
@@ -251,17 +244,17 @@ foreach ($rows as $r) {
   .del-confirm p { font-size: 13.5px; color: #fca5a5; margin-bottom: 12px; font-weight: 500; }
   .del-confirm .del-btns { display: flex; gap: 8px; }
 
-  @media (max-width: 700px) {
-    .toolbar { flex-direction: column; align-items: flex-start; }
-    .search-wrap input { width: 100%; }
-    .stat-row { gap: 8px; }
-  }
-
   .btn-active {
     background: rgba(255,255,255,.12);
     border: 1px solid rgba(255,255,255,.25);
     box-shadow: inset 0 0 0 1px rgba(255,255,255,.1), 0 0 12px rgba(255,255,255,.08);
     color: var(--text);
+  }
+
+  @media (max-width: 700px) {
+    .toolbar { flex-direction: column; align-items: flex-start; }
+    .search-wrap input { width: 100%; }
+    .stat-row { gap: 8px; }
   }
 </style>
 </head>
@@ -279,7 +272,7 @@ foreach ($rows as $r) {
     </div>
   </div>
   <div class="header-nav">
-    <a href="index.php" class="btn btn-ghost btn-active">Book Records</a>
+    <a href="index.php"   class="btn btn-ghost btn-active">Book Records</a>
     <a href="borrow.php"  class="btn btn-ghost">Student Kiosk</a>
     <a href="shelves.php" class="btn btn-ghost">Shelf Manager</a>
   </div>
@@ -294,7 +287,6 @@ foreach ($rows as $r) {
     <?php if ($msg === 'returned'): ?><div class="alert alert-success">Book returned successfully.</div><?php endif; ?>
   <?php endif; ?>
 
-  <!-- Stats -->
   <div class="stat-row">
     <div class="stat-chip sc-total">
       <div><div class="sc-num"><?= $total ?></div><div class="sc-lbl">Total Records</div></div>
@@ -345,9 +337,9 @@ foreach ($rows as $r) {
           <th>Author</th>
           <th>Genre</th>
           <th>Status</th>
-          <th class="th-borrower">Student Name</th>
-          <th class="th-borrower">Block</th>
-          <th class="th-borrower">Student No.</th>
+          <th>Student Name</th>
+          <th>Block</th>
+          <th>Student No.</th>
           <th>Borrowed</th>
           <th>Due Date</th>
           <th>Actions</th>
@@ -382,17 +374,17 @@ foreach ($rows as $r) {
               <?php endif; ?>
             <?php endif; ?>
           </td>
-          <td class="td-borrower">
+          <td>
             <?php if (!empty($row['student_name'])): ?>
               <div class="student-name"><?= htmlspecialchars($row['student_name']) ?></div>
             <?php else: ?><span style="color:var(--muted)">—</span><?php endif; ?>
           </td>
-          <td class="td-borrower">
+          <td>
             <?php if (!empty($row['student_block'])): ?>
               <div class="student-sub"><?= htmlspecialchars($row['student_block']) ?></div>
             <?php else: ?><span style="color:var(--muted)">—</span><?php endif; ?>
           </td>
-          <td class="td-borrower">
+          <td>
             <?php if (!empty($row['student_number'])): ?>
               <div class="student-sub"><?= htmlspecialchars($row['student_number']) ?></div>
             <?php else: ?><span style="color:var(--muted)">—</span><?php endif; ?>
@@ -429,14 +421,14 @@ foreach ($rows as $r) {
     </table>
     <?php else: ?>
     <div class="empty-state">
-      <div class="icon"></div>
-      <p><?= $search !== '' ? 'No records matched your search.<br>Try different keywords.' : 'No book records yet.<br>Click <strong>Add New Book</strong> to get started.' ?></p>
+      <div class="icon">📚</div>
+      <p><?= $search !== '' ? 'No records matched your search.<br>Try different keywords.' : 'No book records yet.<br>Use the <strong>Student Kiosk</strong> to add borrow records.' ?></p>
     </div>
     <?php endif; ?>
   </div>
 </div>
 
-<!-- ── VIEW RECORD MODAL ── -->
+<!-- VIEW RECORD MODAL -->
 <div class="modal-overlay" id="viewModal">
   <div class="modal" role="dialog" aria-modal="true">
     <div class="modal-header">
@@ -502,8 +494,6 @@ function openRecord(row) {
   const cls    = badges[status.toLowerCase()] || 'badge-borrowed';
   document.getElementById('vStatus').innerHTML = `<span class="badge ${cls}">${status}</span>`;
 
-  // Show returned badge in modal
-  const borrowerSection = document.getElementById('vBorrowerSection');
   if (row.returned == 1) {
     document.getElementById('vStatus').innerHTML = `<span class="badge badge-available">Returned</span>`;
   }
@@ -515,8 +505,8 @@ function openRecord(row) {
   document.getElementById('vBorrow').textContent = row.borrowed_date ? formatDate(row.borrowed_date) : '—';
   document.getElementById('vDue').textContent    = row.duedate        ? formatDate(row.duedate)       : '—';
 
-  document.getElementById('vEditLink').href       = `edit.php?id=${row.id}`;
-  document.getElementById('delConfirmLink').href  = `delete.php?id=${row.id}`;
+  document.getElementById('vEditLink').href      = `edit.php?id=${row.id}`;
+  document.getElementById('delConfirmLink').href = `delete.php?id=${row.id}`;
   document.getElementById('delConfirm').classList.remove('show');
 
   document.getElementById('viewModal').classList.add('open');
