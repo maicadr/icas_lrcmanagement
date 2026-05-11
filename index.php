@@ -22,7 +22,6 @@ $total  = mysqli_num_rows($result);
 $rows   = [];
 while ($r = mysqli_fetch_assoc($result)) $rows[] = $r;
 
-// Status counts
 $counts = ['Available'=>0,'Borrowed'=>0,'Overdue'=>0,'Reserved'=>0,'Returned'=>0];
 foreach ($rows as $r) {
     if(!empty($r['returned']) && $r['returned'] == 1){
@@ -39,76 +38,94 @@ foreach ($rows as $r) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LRC — Book Records</title>
-<link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:       #0b0f1a;
-    --surface:  #111827;
-    --card:     #1a2236;
-    --card2:    #1e2a40;
-    --border:   rgba(255,255,255,0.08);
-    --primary:  #4f8ef7;
-    --primary-glow: rgba(79,142,247,0.15);
-    --green:    #34d399;
-    --gold:     #fbbf24;
-    --red:      #f87171;
-    --orange:   #fb923c;
-    --text:     #f0f4ff;
-    --muted:    #6b7a99;
-    --radius:   12px;
-    --shadow:   0 8px 30px rgba(0,0,0,.45);
+    --bg:        #f0f4fa;
+    --surface:   #ffffff;
+    --card:      #f8fafd;
+    --card2:     #eef2f9;
+    --border:    #dde3ef;
+    --border-light: #eaeff8;
+    --primary:   #3b7dd8;
+    --primary-light: rgba(59,125,216,0.10);
+    --primary-glow:  rgba(59,125,216,0.18);
+    --green:     #0ea86a;
+    --green-light: rgba(14,168,106,0.10);
+    --gold:      #d97706;
+    --gold-light: rgba(217,119,6,0.10);
+    --red:       #e03c3c;
+    --red-light:  rgba(224,60,60,0.10);
+    --text:      #1a2340;
+    --text2:     #3d4f6e;
+    --muted:     #8696b4;
+    --radius:    12px;
+    --radius-lg: 16px;
+    --shadow:    0 2px 16px rgba(59,100,180,0.08);
+    --shadow-md: 0 4px 24px rgba(59,100,180,0.13);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
 
   /* HEADER */
   header {
-    background: var(--surface); border-bottom: 1px solid var(--border);
-    padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    background: var(--surface);
+    border-bottom: 1.5px solid var(--border);
+    padding: 14px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap;
     position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 12px rgba(59,100,180,0.07);
   }
   .header-brand { display: flex; align-items: center; gap: 12px; }
-  .header-logo { width: 42px; height: 42px; border-radius: 10px; overflow: hidden; flex-shrink: 0; }
-  .header-title { font-family: 'Lora', serif; font-size: 20px; font-weight: 700; }
+  .header-logo  { width: 42px; height: 42px; border-radius: 10px; overflow: hidden; flex-shrink: 0; box-shadow: 0 2px 8px rgba(59,100,180,0.15); }
+  .header-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--text); }
   .header-sub   { font-size: 11.5px; color: var(--muted); margin-top: 1px; }
   .header-nav   { display: flex; gap: 8px; flex-wrap: wrap; }
 
   .btn {
     display: inline-flex; align-items: center; gap: 7px;
     padding: 9px 18px; border: none; border-radius: 9px;
-    font-size: 13.5px; font-weight: 600; font-family: inherit;
+    font-size: 13px; font-weight: 700; font-family: inherit;
     cursor: pointer; text-decoration: none; transition: all .2s; white-space: nowrap;
   }
-  .btn:hover { transform: translateY(-1px); filter: brightness(1.1); }
-  .btn-primary  { background: var(--primary); color: #fff; }
-  .btn-green    { background: var(--green);   color: #000; }
-  .btn-gold     { background: var(--gold);    color: #000; }
-  .btn-red      { background: var(--red);     color: #fff; }
-  .btn-ghost    { background: rgba(255,255,255,.06); color: var(--text); border: 1px solid var(--border); }
-  .btn-ghost:hover { background: rgba(255,255,255,.1); }
-  .btn-sm       { padding: 6px 12px; font-size: 12.5px; border-radius: 7px; }
-  .btn-icon     { padding: 7px 10px; font-size: 14px; }
+  .btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+  .btn-primary { background: var(--primary); color: #fff; box-shadow: 0 2px 10px rgba(59,125,216,0.25); }
+  .btn-green   { background: var(--green);   color: #fff; }
+  .btn-gold    { background: var(--gold);    color: #fff; }
+  .btn-red     { background: var(--red);     color: #fff; }
+  .btn-ghost   { background: var(--card2); color: var(--text2); border: 1.5px solid var(--border); }
+  .btn-ghost:hover { background: var(--border); }
+  .btn-active  { background: var(--primary); color: #fff; box-shadow: 0 2px 10px rgba(59,125,216,0.25); }
+  .btn-sm      { padding: 6px 14px; font-size: 12.5px; border-radius: 8px; }
+  .btn-icon    { padding: 7px 10px; font-size: 14px; }
 
   .container { max-width: 1400px; margin: 0 auto; padding: 28px 20px; }
 
   /* ALERTS */
   .alert {
     padding: 13px 18px; border-radius: 10px; margin-bottom: 20px;
-    font-size: 13.5px; font-weight: 500; display: flex; align-items: center; gap: 10px;
+    font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 10px;
   }
-  .alert-success { background: rgba(52,211,153,.08); color: #6ee7b7; border-left: 3px solid var(--green); }
-  .alert-danger  { background: rgba(248,113,113,.08); color: #fca5a5; border-left: 3px solid var(--red); }
+  .alert-success { background: var(--green-light); color: var(--green); border-left: 3px solid var(--green); }
+  .alert-danger  { background: var(--red-light);   color: var(--red);   border-left: 3px solid var(--red); }
 
   /* STAT CHIPS */
-  .stat-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 22px; }
+  .stat-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; }
   .stat-chip {
-    display: flex; align-items: center; gap: 9px;
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 10px; padding: 10px 16px;
-    font-size: 13px; font-weight: 600;
+    display: flex; align-items: center; gap: 14px;
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg); padding: 14px 20px;
+    box-shadow: var(--shadow); min-width: 130px;
   }
-  .stat-chip .sc-num { font-size: 20px; font-weight: 700; line-height: 1; }
-  .stat-chip .sc-lbl { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .stat-chip .sc-icon { font-size: 26px; }
+  .stat-chip .sc-num  { font-size: 22px; font-weight: 800; line-height: 1; font-family: 'Playfair Display', serif; }
+  .stat-chip .sc-lbl  { font-size: 11px; color: var(--muted); margin-top: 2px; font-weight: 600; letter-spacing: .4px; text-transform: uppercase; }
   .sc-total   .sc-num { color: var(--primary); }
   .sc-avail   .sc-num { color: var(--green); }
   .sc-borrow  .sc-num { color: var(--gold); }
@@ -123,70 +140,70 @@ foreach ($rows as $r) {
 
   .search-wrap { position: relative; }
   .search-wrap input {
-    padding: 9px 38px 9px 14px;
-    background: var(--card); border: 1.5px solid var(--border);
+    padding: 9px 40px 9px 16px;
+    background: var(--surface); border: 1.5px solid var(--border);
     border-radius: 9px; color: var(--text); font-size: 13.5px;
     font-family: inherit; outline: none; width: 290px;
     transition: border-color .2s, box-shadow .2s;
   }
   .search-wrap input::placeholder { color: var(--muted); }
   .search-wrap input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
-  .search-wrap .s-ico { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 14px; pointer-events: none; }
+  .search-wrap .s-ico { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; pointer-events: none; }
 
   /* TABLE CARD */
   .table-card {
     background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg);
     overflow: hidden; overflow-x: auto;
     box-shadow: var(--shadow);
   }
 
   table { width: 100%; border-collapse: collapse; min-width: 980px; }
 
-  thead tr { background: var(--card); }
+  thead tr { background: var(--card2); }
   thead th {
     padding: 13px 16px; text-align: left;
-    font-size: 10.5px; font-weight: 700; letter-spacing: .7px; text-transform: uppercase;
-    color: var(--muted); white-space: nowrap; border-bottom: 1px solid var(--border);
+    font-size: 10.5px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase;
+    color: var(--muted); white-space: nowrap;
+    border-bottom: 1.5px solid var(--border);
     user-select: none;
   }
 
-  tbody tr { border-bottom: 1px solid var(--border); transition: background .15s; cursor: pointer; }
+  tbody tr { border-bottom: 1px solid var(--border-light); transition: background .15s; cursor: pointer; }
   tbody tr:last-child { border-bottom: none; }
-  tbody tr:hover { background: rgba(79,142,247,.04); }
+  tbody tr:hover { background: #f0f5ff; }
 
-  tbody td { padding: 12px 16px; font-size: 13.5px; vertical-align: middle; }
+  tbody td { padding: 13px 16px; font-size: 13.5px; vertical-align: middle; }
 
-  .td-num   { color: var(--muted); font-size: 12px; font-weight: 600; }
+  .td-num   { color: var(--muted); font-size: 12px; font-weight: 700; }
   .td-title { font-weight: 700; color: var(--text); }
-  .td-muted { color: var(--muted); font-size: 13px; }
+  .td-muted { color: var(--text2); font-size: 13px; }
 
-  /* FIX: student name now uses plain text color, no teal highlight */
-  .student-name { font-weight: 600; color: var(--text); font-size: 13px; }
-  .student-sub  { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .student-name { font-weight: 700; color: var(--text); font-size: 13px; }
+  .student-sub  { font-size: 12px; color: var(--text2); margin-top: 1px; }
 
   .badge {
     display: inline-flex; align-items: center; gap: 5px;
-    padding: 3px 11px; border-radius: 20px;
+    padding: 4px 12px; border-radius: 20px;
     font-size: 11.5px; font-weight: 700; letter-spacing: .2px;
   }
-  .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-  .badge-available { background: rgba(52,211,153,.1);  color: var(--green); }
-  .badge-borrowed  { background: rgba(251,191,36,.1);  color: var(--gold); }
-  .badge-overdue   { background: rgba(248,113,113,.1); color: var(--red); }
-  .badge-reserved  { background: rgba(79,142,247,.12); color: var(--primary); }
+  .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+  .badge-available { background: var(--green-light); color: var(--green); }
+  .badge-borrowed  { background: var(--gold-light);  color: var(--gold); }
+  .badge-overdue   { background: var(--red-light);   color: var(--red); }
+  .badge-reserved  { background: var(--primary-light); color: var(--primary); }
 
   .actions { display: flex; gap: 6px; }
 
   .empty-state { text-align: center; padding: 72px 20px; color: var(--muted); }
   .empty-state .icon { font-size: 52px; margin-bottom: 14px; }
-  .empty-state p { font-size: 15px; line-height: 1.7; }
+  .empty-state p { font-size: 15px; line-height: 1.7; color: var(--text2); }
 
-  /* VIEW RECORD MODAL */
+  /* MODAL */
   .modal-overlay {
     display: none; position: fixed; inset: 0; z-index: 1000;
-    background: rgba(0,0,0,.75); backdrop-filter: blur(8px);
+    background: rgba(26,35,64,0.45); backdrop-filter: blur(6px);
     align-items: center; justify-content: center; padding: 16px;
   }
   .modal-overlay.open { display: flex; animation: fadeIn .2s; }
@@ -194,62 +211,55 @@ foreach ($rows as $r) {
   @keyframes slideUp { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
   .modal {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 18px; width: 100%; max-width: 480px;
-    box-shadow: 0 30px 80px rgba(0,0,0,.65);
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 20px; width: 100%; max-width: 480px;
+    box-shadow: 0 24px 60px rgba(26,35,64,0.18);
     animation: slideUp .25s ease; overflow: hidden;
     max-height: 90vh; display: flex; flex-direction: column;
   }
   .modal-header {
-    background: var(--card); padding: 20px 22px;
+    background: var(--card2); padding: 20px 22px;
     display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
-    border-bottom: 1px solid var(--border); flex-shrink: 0;
+    border-bottom: 1.5px solid var(--border); flex-shrink: 0;
   }
-  .modal-header h3 { font-family: 'Lora', serif; font-size: 18px; color: var(--text); }
+  .modal-header h3 { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--text); }
   .modal-header p  { font-size: 12px; color: var(--muted); margin-top: 3px; }
   .modal-close {
-    background: rgba(255,255,255,.06); border: 1px solid var(--border);
+    background: var(--border-light); border: 1.5px solid var(--border);
     color: var(--muted); width: 30px; height: 30px; border-radius: 8px;
     font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;
     transition: all .2s; flex-shrink: 0;
   }
-  .modal-close:hover { background: rgba(255,255,255,.12); color: var(--text); }
+  .modal-close:hover { background: var(--border); color: var(--text); }
   .modal-body { padding: 22px; overflow-y: auto; }
 
   .rec-section { margin-bottom: 18px; }
   .rec-section-title {
-    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+    font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
     color: var(--muted); margin-bottom: 10px; padding-bottom: 6px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1.5px solid var(--border-light);
   }
   .rec-row {
     display: flex; justify-content: space-between; align-items: flex-start;
-    gap: 12px; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,.04);
+    gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--border-light);
   }
   .rec-row:last-child { border-bottom: none; }
-  .rec-key { font-size: 12px; color: var(--muted); flex: none; min-width: 100px; }
-  .rec-val { font-size: 13.5px; font-weight: 600; color: var(--text); text-align: right; }
+  .rec-key { font-size: 12px; color: var(--muted); flex: none; min-width: 100px; font-weight: 600; }
+  .rec-val { font-size: 13.5px; font-weight: 700; color: var(--text); text-align: right; }
 
   .modal-footer {
-    padding: 14px 22px; border-top: 1px solid var(--border);
+    padding: 14px 22px; border-top: 1.5px solid var(--border);
     display: flex; gap: 8px; flex-shrink: 0;
-    background: var(--card);
+    background: var(--card2);
   }
 
   .del-confirm {
-    display: none; background: rgba(248,113,113,.06); border: 1px solid rgba(248,113,113,.2);
+    display: none; background: var(--red-light); border: 1.5px solid rgba(224,60,60,0.2);
     border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;
   }
   .del-confirm.show { display: block; }
-  .del-confirm p { font-size: 13.5px; color: #fca5a5; margin-bottom: 12px; font-weight: 500; }
+  .del-confirm p { font-size: 13.5px; color: var(--red); margin-bottom: 12px; font-weight: 600; }
   .del-confirm .del-btns { display: flex; gap: 8px; }
-
-  .btn-active {
-    background: rgba(255,255,255,.12);
-    border: 1px solid rgba(255,255,255,.25);
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,.1), 0 0 12px rgba(255,255,255,.08);
-    color: var(--text);
-  }
 
   @media (max-width: 700px) {
     .toolbar { flex-direction: column; align-items: flex-start; }
@@ -272,7 +282,7 @@ foreach ($rows as $r) {
     </div>
   </div>
   <div class="header-nav">
-    <a href="index.php"   class="btn btn-ghost btn-active">Book Records</a>
+    <a href="index.php"   class="btn btn-active">Book Records</a>
     <a href="borrow.php"  class="btn btn-ghost">Student Kiosk</a>
     <a href="shelves.php" class="btn btn-ghost">Shelf Manager</a>
   </div>
@@ -281,31 +291,36 @@ foreach ($rows as $r) {
 <div class="container">
 
   <?php if (isset($_GET['msg'])): $msg = $_GET['msg']; ?>
-    <?php if ($msg === 'added'):    ?><div class="alert alert-success">Book successfully added.</div><?php endif; ?>
-    <?php if ($msg === 'updated'):  ?><div class="alert alert-success">Book record updated.</div><?php endif; ?>
-    <?php if ($msg === 'deleted'):  ?><div class="alert alert-danger">Book record deleted.</div><?php endif; ?>
-    <?php if ($msg === 'returned'): ?><div class="alert alert-success">Book returned successfully.</div><?php endif; ?>
+    <?php if ($msg === 'added'):    ?><div class="alert alert-success">✅ Book successfully added.</div><?php endif; ?>
+    <?php if ($msg === 'updated'):  ?><div class="alert alert-success">✅ Book record updated.</div><?php endif; ?>
+    <?php if ($msg === 'deleted'):  ?><div class="alert alert-danger">🗑️ Book record deleted.</div><?php endif; ?>
+    <?php if ($msg === 'returned'): ?><div class="alert alert-success">↩️ Book returned successfully.</div><?php endif; ?>
   <?php endif; ?>
 
+  <!-- Stats -->
   <div class="stat-row">
     <div class="stat-chip sc-total">
+      <div class="sc-icon">📚</div>
       <div><div class="sc-num"><?= $total ?></div><div class="sc-lbl">Total Records</div></div>
     </div>
     <div class="stat-chip sc-avail">
+      <div class="sc-icon">✅</div>
       <div><div class="sc-num"><?= $counts['Returned'] ?></div><div class="sc-lbl">Returned</div></div>
     </div>
     <div class="stat-chip sc-borrow">
+      <div class="sc-icon">📖</div>
       <div><div class="sc-num"><?= $counts['Borrowed'] ?></div><div class="sc-lbl">Borrowed</div></div>
     </div>
     <div class="stat-chip sc-overdue">
+      <div class="sc-icon">⚠️</div>
       <div><div class="sc-num"><?= $counts['Overdue'] ?></div><div class="sc-lbl">Overdue</div></div>
     </div>
   </div>
 
   <div class="toolbar">
     <div class="toolbar-left">
-      <a href="delete_all.php" class="btn btn-red"
-         onclick="return confirm('Delete ALL book records? This cannot be undone.')">Delete All</a>
+      <a href="delete_all.php" class="btn btn-red btn-sm"
+         onclick="return confirm('Delete ALL book records? This cannot be undone.')">🗑️ Delete All</a>
     </div>
     <form method="GET" action="index.php" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
       <div class="search-wrap">
@@ -321,7 +336,7 @@ foreach ($rows as $r) {
   </div>
 
   <?php if ($search !== ''): ?>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px;font-weight:600;">
       Found <strong style="color:var(--primary)"><?= $total ?></strong> result<?= $total !== 1 ? 's' : '' ?>
       for <strong style="color:var(--text)">"<?= htmlspecialchars($search) ?>"</strong>
     </p>
@@ -364,13 +379,11 @@ foreach ($rows as $r) {
           <td class="td-muted" style="font-size:12.5px"><?= htmlspecialchars($row['book_genre']) ?></td>
           <td>
             <?php if ($row['returned']): ?>
-              <span class="badge" style="background:rgba(52,211,153,.1);color:var(--green);border:1px solid rgba(52,211,153,.2);">
-                Returned
-              </span>
+              <span class="badge badge-available">Returned</span>
             <?php else: ?>
               <span class="badge <?= $badgeClass ?>"><?= htmlspecialchars($row['book_status']) ?></span>
               <?php if ($isOverdue): ?>
-                <span style="font-size:10.5px;color:var(--red);display:block;margin-top:3px">⚠ Overdue</span>
+                <span style="font-size:10.5px;color:var(--red);display:block;margin-top:3px;font-weight:700;">⚠ Overdue</span>
               <?php endif; ?>
             <?php endif; ?>
           </td>
@@ -395,7 +408,7 @@ foreach ($rows as $r) {
           <td style="white-space:nowrap;">
             <?php if ($row['duedate']): ?>
               <?php $isPast = strtotime($row['duedate']) < time() && $status === 'borrowed'; ?>
-              <span style="font-size:12.5px;color:<?= $isPast ? 'var(--red)' : 'var(--muted)' ?>;font-weight:<?= $isPast ? '700' : '400' ?>">
+              <span style="font-size:12.5px;color:<?= $isPast ? 'var(--red)' : 'var(--text2)' ?>;font-weight:<?= $isPast ? '700' : '500' ?>">
                 <?= date('M d, Y', strtotime($row['duedate'])) ?>
               </span>
             <?php else: ?><span style="color:var(--muted)">—</span><?php endif; ?>
@@ -407,8 +420,8 @@ foreach ($rows as $r) {
                     title="Mark as Returned"
                     onclick="return confirm('Mark this book as returned?')">↩️</a>
               <?php elseif ($row['returned']): ?>
-                <span class="btn btn-sm btn-icon" style="background:rgba(52,211,153,.1);color:var(--green);
-                      border:1px solid rgba(52,211,153,.2);cursor:default;" title="Returned">✅</span>
+                <span class="btn btn-sm btn-icon" style="background:var(--green-light);color:var(--green);
+                      border:1.5px solid rgba(14,168,106,0.2);cursor:default;" title="Returned">✅</span>
               <?php endif; ?>
               <a href="edit.php?id=<?= $row['id'] ?>" class="btn btn-gold btn-sm btn-icon" title="Edit">✏️</a>
               <a href="delete.php?id=<?= $row['id'] ?>" class="btn btn-red btn-sm btn-icon" title="Delete"
@@ -421,7 +434,7 @@ foreach ($rows as $r) {
     </table>
     <?php else: ?>
     <div class="empty-state">
-      <div class="icon"></div>
+      <div class="icon">📚</div>
       <p><?= $search !== '' ? 'No records matched your search.<br>Try different keywords.' : 'No book records yet.<br>Use the <strong>Student Kiosk</strong> to add borrow records.' ?></p>
     </div>
     <?php endif; ?>
@@ -470,8 +483,8 @@ foreach ($rows as $r) {
       </div>
     </div>
     <div class="modal-footer">
-      <a href="#" class="btn btn-gold btn-sm" id="vEditLink">Edit</a>
-      <button class="btn btn-red btn-sm" onclick="showDelConfirm()">Delete</button>
+      <a href="#" class="btn btn-gold btn-sm" id="vEditLink">✏️ Edit</a>
+      <button class="btn btn-red btn-sm" onclick="showDelConfirm()">🗑️ Delete</button>
       <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="closeModal()">Close</button>
     </div>
   </div>
