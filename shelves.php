@@ -566,7 +566,7 @@ $genreImage = [
 
     <!-- Live preview strip -->
     <div class="modal-preview-strip">
-      <div class="mps-thumb" id="mpsThumb">📖</div>
+      <div class="mps-thumb" id="mpsThumb"></div>
       <div>
         <div class="mps-genre"  id="mpsGenre">—</div>
         <div class="mps-title"  id="mpsTitle">—</div>

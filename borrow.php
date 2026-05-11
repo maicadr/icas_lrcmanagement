@@ -323,7 +323,7 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
 
   <?php if ($shelf_count === 0): ?>
     <div class="empty-kiosk">
-      <div class="e-icon">📚</div>
+      <div class="e-icon"></div>
       <h3>No Books on Display Yet</h3>
       <p>Ask the librarian to add books to the shelf display.</p>
       <a href="shelves.php" class="btn btn-primary" style="margin-top:20px">Go to Shelf Manager →</a>
@@ -344,7 +344,7 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
 
     <?php if (count($carousel_books) > 0): ?>
     <div class="carousel-section" id="carouselSection">
-      <h3>⭐ Featured Books</h3>
+      <h3>Popular Books</h3>
       <div class="carousel-wrap">
         <div class="carousel-track-outer">
           <div class="carousel-track" id="carouselTrack">
@@ -486,10 +486,10 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
     <div class="modal-body">
       <div id="modalErrors"></div>
       <div class="step-panel active" id="step0">
-        <div class="step-heading">📖 About this Book</div>
+        <div class="step-heading">About this Book</div>
         <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;font-size:14px;color:var(--muted);line-height:1.7;" id="descBox"><em>No description available.</em></div>
         <div style="display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;">
-          <span style="font-size:20px;">📦</span>
+          <span style="font-size:20px;"></span>
           <div>
             <div style="font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);font-weight:700;margin-bottom:3px;">Availability</div>
             <div id="stockDisplay" style="font-size:15px;font-weight:700;">—</div>
@@ -507,7 +507,7 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
         <input type="hidden" name="student_block"  id="fStudentBlock">
         <input type="hidden" name="student_number" id="fStudentNumber">
         <div class="step-panel" id="step1">
-          <div class="step-heading">👤 Who are you?</div>
+          <div class="step-heading">Who are you?</div>
           <div class="field-group">
             <label>Full Name <span class="req">*</span></label>
             <input type="text" id="sName" placeholder="e.g. Juan dela Cruz" autocomplete="name">
@@ -524,7 +524,7 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
           </div>
         </div>
         <div class="step-panel" id="step2">
-          <div class="step-heading">📅 Borrow Schedule</div>
+          <div class="step-heading">Borrow Schedule</div>
           <div class="date-range-viz">
             <div class="drv-item"><div class="drv-label">Borrow Date</div><div class="drv-date" id="vizBorrowDate">—</div><div class="drv-sub">Today</div></div>
             <div class="drv-sep">→</div>
@@ -544,7 +544,7 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
           </div>
         </div>
         <div class="step-panel" id="step3">
-          <div class="step-heading">✅ Review &amp; Confirm</div>
+          <div class="step-heading">Review &amp; Confirm</div>
           <div class="summary-card">
             <div class="sc-header">Book Details</div>
             <div class="sc-body">
@@ -633,7 +633,7 @@ function goToStep(n) {
   const btn = document.getElementById('btnNext');
   if (n===3) {
     if (currentBookData.stock<=0) { btn.disabled=true; btn.textContent='✕ Out of Stock'; btn.style.background='var(--red)'; btn.style.opacity='0.6'; btn.style.cursor='not-allowed'; btn.className='btn'; }
-    else { btn.disabled=false; btn.textContent='✅ Confirm Borrow'; btn.style.background=btn.style.opacity=btn.style.cursor=''; btn.className='btn btn-submit'; }
+    else { btn.disabled=false; btn.textContent='Confirm Borrow'; btn.style.background=btn.style.opacity=btn.style.cursor=''; btn.className='btn btn-submit'; }
   } else if (n===0) { btn.disabled=false; btn.textContent='View Borrow Form →'; btn.style.background=btn.style.opacity=btn.style.cursor=''; btn.className='btn btn-next'; }
   else { btn.disabled=false; btn.textContent='Continue →'; btn.style.background=btn.style.opacity=btn.style.cursor=''; btn.className='btn btn-next'; }
 }
