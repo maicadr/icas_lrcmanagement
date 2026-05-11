@@ -421,7 +421,7 @@ foreach ($rows as $r) {
     </table>
     <?php else: ?>
     <div class="empty-state">
-      <div class="icon">📚</div>
+      <div class="icon"></div>
       <p><?= $search !== '' ? 'No records matched your search.<br>Try different keywords.' : 'No book records yet.<br>Use the <strong>Student Kiosk</strong> to add borrow records.' ?></p>
     </div>
     <?php endif; ?>
