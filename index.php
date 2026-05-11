@@ -492,7 +492,6 @@ foreach ($rows as $r) {
 
 <script>
 let currentId = null;
-
 function openRecord(row) {
   currentId = row.id;
 
@@ -534,13 +533,11 @@ function closeModal() {
 function showDelConfirm() {
   document.getElementById('delConfirm').classList.add('show');
 }
-
 function formatDate(s) {
   if (!s) return '—';
   const d = new Date(s + 'T00:00:00');
   return d.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
 }
-
 document.getElementById('viewModal').addEventListener('click', e => {
   if (e.target === document.getElementById('viewModal')) closeModal();
 });
