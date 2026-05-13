@@ -56,9 +56,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $s = $shelf_stock;
         $sql = "UPDATE shelf_books SET shelf_title='$t', shelf_author='$a', shelf_genre='$g', shelf_cover='$c', shelf_desc='$d', shelf_stock=$s WHERE id=$edit_id";
         if (mysqli_query($conn, $sql)) {
-            // Sync any existing borrow records that used the old title
+            // Sync book records: match case-insensitively so minor spelling
+            // differences (e.g. "Kimitsu No" vs "Kimetsu Na") still get updated.
+            // We match LOWER(TRIM(book_title)) against LOWER(TRIM(old_title)).
             if ($old_title !== '') {
-                mysqli_query($conn, "UPDATE books SET book_title='$t', book_author='$a', book_genre='$g' WHERE book_title='$old_title'");
+                $old_lower = strtolower(trim($old_row['shelf_title']));
+                $old_lower_esc = mysqli_real_escape_string($conn, $old_lower);
+                mysqli_query($conn, "UPDATE books SET book_title='$t', book_author='$a', book_genre='$g'
+                                     WHERE LOWER(TRIM(book_title)) = '$old_lower_esc'");
             }
             header('Location: shelves.php?msg=updated');
             exit;

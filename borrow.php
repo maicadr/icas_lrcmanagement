@@ -463,7 +463,7 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
       <div class="genre-tab active" onclick="filterByGenre('all', this)">All Books</div>
       <?php foreach ($genres as $g): ?>
         <div class="genre-tab" onclick="filterByGenre('<?= htmlspecialchars($g, ENT_QUOTES) ?>', this)">
-          <?= ($genreEmoji[$g] ?? '') . ' ' . htmlspecialchars($g) ?>
+          <?= htmlspecialchars($g) ?>
         </div>
       <?php endforeach; ?>
     </div>
@@ -499,7 +499,7 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
           <div class="bm-title"><?= htmlspecialchars($sb['shelf_title']) ?></div>
           <div class="bm-author">by <?= htmlspecialchars($sb['shelf_author']) ?></div>
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:6px;">
-            <span class="bm-genre"><?= $emoji ?> <?= htmlspecialchars($sb['shelf_genre']) ?></span>
+            <span class="bm-genre"><?= htmlspecialchars($sb['shelf_genre']) ?></span>
             <?php if ($stock > 0): ?>
               <span style="font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:20px;background:var(--green-light);color:var(--green);border:1px solid rgba(14,168,106,.2);">
                 Available · <?= $stock ?> <?= $stock === 1 ? 'copy' : 'copies' ?>
