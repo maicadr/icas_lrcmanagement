@@ -21,8 +21,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $g = mysqli_real_escape_string($conn, $shelf_genre);
         $c = mysqli_real_escape_string($conn, $shelf_cover);
         $d = mysqli_real_escape_string($conn, $shelf_desc);
-        $s = (int)($_POST['shelf_stock']?? 1 );
-        $sql = "UPDATE shelf_books SET shelf_title='$t', shelf_author='$a', shelf_genre='$g', shelf_cover='$c', shelf_desc='$d', shelf_stock=$s WHERE id=$edit_id";
         $sql = "INSERT INTO shelf_books (shelf_title, shelf_author, shelf_genre, shelf_cover, shelf_desc, shelf_stock, date_added) VALUES ('$t','$a','$g','$c','$d', " . (int)($_POST['shelf_stock']?? 1) . ", CURDATE())";
         if (mysqli_query($conn, $sql)) {
             $success = 'Book added to shelf display!';
@@ -46,6 +44,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     if ($shelf_genre  === '') $errors[] = 'Genre is required.';
 
     if (empty($errors) && $edit_id > 0) {
+        // Grab the old title before updating so we can sync the books table
+        $old_row   = mysqli_fetch_assoc(mysqli_query($conn, "SELECT shelf_title FROM shelf_books WHERE id=$edit_id LIMIT 1"));
+        $old_title = $old_row ? mysqli_real_escape_string($conn, $old_row['shelf_title']) : '';
+
         $t = mysqli_real_escape_string($conn, $shelf_title);
         $a = mysqli_real_escape_string($conn, $shelf_author);
         $g = mysqli_real_escape_string($conn, $shelf_genre);
@@ -54,6 +56,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $s = $shelf_stock;
         $sql = "UPDATE shelf_books SET shelf_title='$t', shelf_author='$a', shelf_genre='$g', shelf_cover='$c', shelf_desc='$d', shelf_stock=$s WHERE id=$edit_id";
         if (mysqli_query($conn, $sql)) {
+            // Sync any existing borrow records that used the old title
+            if ($old_title !== '') {
+                mysqli_query($conn, "UPDATE books SET book_title='$t', book_author='$a', book_genre='$g' WHERE book_title='$old_title'");
+            }
             header('Location: shelves.php?msg=updated');
             exit;
         } else {
@@ -107,56 +113,63 @@ $genreImage = [
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Shelf Manager — LRC</title>
-<link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:       #0b0f1a;
-    --surface:  #111827;
-    --card:     #1a2236;
-    --card2:    #1e2a40;
-    --border:   rgba(255,255,255,0.08);
-    --primary:  #4f8ef7;
-    --primary-glow: rgba(79,142,247,0.15);
-    --green:    #34d399;
-    --gold:     #fbbf24;
-    --red:      #f87171;
-    --text:     #f0f4ff;
-    --muted:    #6b7a99;
-    --radius:   12px;
-    --radius-lg:18px;
-    --shadow:   0 8px 30px rgba(0,0,0,.45);
+    --bg:           #f0f4fa;
+    --surface:      #ffffff;
+    --card:         #f8fafd;
+    --card2:        #eef2f9;
+    --border:       #dde3ef;
+    --border-light: #eaeff8;
+    --primary:      #3b7dd8;
+    --primary-light: rgba(59,125,216,0.10);
+    --primary-glow:  rgba(59,125,216,0.18);
+    --green:        #0ea86a;
+    --green-light:  rgba(14,168,106,0.10);
+    --gold:         #d97706;
+    --gold-light:   rgba(217,119,6,0.10);
+    --red:          #e03c3c;
+    --red-light:    rgba(224,60,60,0.10);
+    --text:         #1a2340;
+    --text2:        #3d4f6e;
+    --muted:        #8696b4;
+    --radius:       12px;
+    --radius-lg:    16px;
+    --shadow:       0 2px 16px rgba(59,100,180,0.08);
+    --shadow-md:    0 4px 24px rgba(59,100,180,0.13);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
   /* HEADER */
   header {
-    background: var(--surface); border-bottom: 1px solid var(--border);
-    padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    background: var(--surface); border-bottom: 1.5px solid var(--border);
+    padding: 14px 32px; display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap;
     position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 12px rgba(59,100,180,0.07);
   }
   .header-brand { display: flex; align-items: center; gap: 12px; }
-  .header-logo {
-    width: 42px; height: 42px; border-radius: 10px;
-    overflow: hidden; flex-shrink: 0;
-  }
-  .header-title { font-family: 'Lora', serif; font-size: 20px; font-weight: 700; }
+  .header-logo  { width: 42px; height: 42px; border-radius: 10px; overflow: hidden; flex-shrink: 0; box-shadow: 0 2px 8px rgba(59,100,180,0.15); }
+  .header-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--text); }
   .header-sub   { font-size: 11.5px; color: var(--muted); margin-top: 1px; }
   .header-nav   { display: flex; gap: 8px; }
 
   .btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 7px;
     padding: 9px 18px; border: none; border-radius: 9px;
-    font-size: 13.5px; font-weight: 600; font-family: inherit;
+    font-size: 13px; font-weight: 700; font-family: inherit;
     cursor: pointer; text-decoration: none; transition: all .2s; white-space: nowrap;
   }
-  .btn:hover { transform: translateY(-1px); filter: brightness(1.1); }
-  .btn-primary { background: var(--primary); color: #fff; }
-  .btn-green   { background: var(--green);   color: #000; }
-  .btn-gold    { background: var(--gold);    color: #000; }
+  .btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+  .btn-primary { background: var(--primary); color: #fff; box-shadow: 0 2px 10px rgba(59,125,216,0.25); }
+  .btn-green   { background: var(--green);   color: #fff; }
+  .btn-gold    { background: var(--gold);    color: #fff; }
   .btn-red     { background: var(--red);     color: #fff; }
-  .btn-ghost   { background: rgba(255,255,255,.06); color: var(--text); border: 1px solid var(--border); }
-  .btn-ghost:hover { background: rgba(255,255,255,.1); }
+  .btn-ghost   { background: var(--card2); color: var(--text2); border: 1.5px solid var(--border); }
+  .btn-ghost:hover { background: var(--border); }
+  .btn-active  { background: var(--primary); color: #fff; box-shadow: 0 2px 10px rgba(59,125,216,0.25); }
 
   .container { max-width: 1380px; margin: 0 auto; padding: 28px 20px; }
   .layout    { display: grid; grid-template-columns: 370px 1fr; gap: 28px; align-items: start; }
@@ -164,24 +177,24 @@ $genreImage = [
   /* ALERTS */
   .alert {
     padding: 13px 18px; border-radius: 10px; margin-bottom: 22px;
-    font-size: 13.5px; font-weight: 500; display: flex; align-items: center; gap: 10px;
+    font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 10px;
   }
-  .alert-success { background: rgba(52,211,153,.08); color: #6ee7b7; border-left: 3px solid var(--green); }
-  .alert-danger  { background: rgba(248,113,113,.08); color: #fca5a5; border-left: 3px solid var(--red); }
+  .alert-success { background: var(--green-light); color: var(--green); border-left: 3px solid var(--green); }
+  .alert-danger  { background: var(--red-light);   color: var(--red);   border-left: 3px solid var(--red); }
   .alert-danger ul { margin: 6px 0 0 18px; }
 
   /* ADD FORM CARD */
   .form-card {
-    background: var(--surface); border: 1px solid var(--border);
+    background: var(--surface); border: 1.5px solid var(--border);
     border-radius: var(--radius-lg); overflow: hidden;
     position: sticky; top: 76px; box-shadow: var(--shadow);
   }
   .form-card-header {
-    padding: 18px 22px; background: var(--card);
-    border-bottom: 1px solid var(--border);
+    padding: 18px 22px; background: var(--card2);
+    border-bottom: 1.5px solid var(--border);
   }
   .form-card-header h2 {
-    font-family: 'Lora', serif; font-size: 17px; color: var(--gold);
+    font-family: 'Playfair Display', serif; font-size: 17px; color: var(--gold);
     display: flex; align-items: center; gap: 8px;
   }
   .form-card-header p  { font-size: 12px; color: var(--muted); margin-top: 4px; }
@@ -189,7 +202,7 @@ $genreImage = [
 
   .fgroup { margin-bottom: 15px; }
   .fgroup label {
-    display: block; font-size: 11px; font-weight: 700;
+    display: block; font-size: 11px; font-weight: 800;
     letter-spacing: .5px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px;
   }
   .fgroup input, .fgroup select, .fgroup textarea {
@@ -200,9 +213,9 @@ $genreImage = [
   }
   .fgroup input::placeholder, .fgroup textarea::placeholder { color: var(--muted); opacity: .7; }
   .fgroup input:focus, .fgroup select:focus, .fgroup textarea:focus {
-    border-color: var(--gold); box-shadow: 0 0 0 3px rgba(251,191,36,.12);
+    border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow);
   }
-  .fgroup select option { background: #1a2236; }
+  .fgroup select option { background: var(--surface); color: var(--text); }
   .fgroup textarea { resize: vertical; min-height: 68px; }
   .hint { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
 
@@ -214,7 +227,7 @@ $genreImage = [
     transition: border-color .2s;
   }
   .cover-preview-box img { width: 100%; height: 100%; object-fit: cover; }
-  .cover-preview-box.has-img { border-color: rgba(251,191,36,.3); }
+  .cover-preview-box.has-img { border-color: rgba(217,119,6,.4); }
 
   /* SHELF GRID */
   .shelf-header {
@@ -222,26 +235,28 @@ $genreImage = [
     margin-bottom: 20px; flex-wrap: wrap; gap: 10px;
   }
   .shelf-header h2 {
-    font-family: 'Lora', serif; font-size: 20px; color: var(--text);
+    font-family: 'Playfair Display', serif; font-size: 20px; color: var(--text);
     display: flex; align-items: center; gap: 10px;
   }
   .shelf-header p  { font-size: 13px; color: var(--muted); margin-top: 3px; }
   .count-badge {
     background: var(--primary); color: #fff;
-    font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 20px;
+    font-size: 14px; font-weight: 800; padding: 4px 14px; border-radius: 20px;
+    box-shadow: 0 2px 8px rgba(59,125,216,0.30);
   }
 
   .books-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(172px, 1fr)); gap: 18px; }
 
   .book-card {
-    background: var(--surface); border: 1px solid var(--border);
+    background: var(--surface); border: 1.5px solid var(--border);
     border-radius: var(--radius-lg); overflow: hidden;
     transition: transform .22s, box-shadow .22s, border-color .22s;
+    box-shadow: var(--shadow);
   }
   .book-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 16px 44px rgba(0,0,0,.55);
-    border-color: rgba(251,191,36,.35);
+    box-shadow: var(--shadow-md);
+    border-color: rgba(217,119,6,.4);
   }
 
   .book-cover-area { width: 100%; height: 180px; overflow: hidden; position: relative; }
@@ -251,13 +266,13 @@ $genreImage = [
   .genre-cover-wrap { position: relative; width: 100%; height: 180px; overflow: hidden; }
   .genre-cover-img {
     width: 100%; height: 100%; object-fit: cover;
-    filter: brightness(.5) saturate(.65); transition: transform .3s, filter .3s;
+    filter: brightness(.7) saturate(.75); transition: transform .3s, filter .3s;
   }
-  .book-card:hover .genre-cover-img { transform: scale(1.05); filter: brightness(.65) saturate(1); }
+  .book-card:hover .genre-cover-img { transform: scale(1.05); filter: brightness(.85) saturate(1); }
   .genre-cover-label {
     position: absolute; bottom: 10px; left: 0; right: 0; text-align: center;
-    font-size: 9.5px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;
-    color: rgba(255,255,255,.9); text-shadow: 0 1px 4px rgba(0,0,0,.8);
+    font-size: 9.5px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase;
+    color: rgba(255,255,255,.95); text-shadow: 0 1px 4px rgba(0,0,0,.6);
   }
 
   .book-info { padding: 12px 13px 10px; }
@@ -267,24 +282,24 @@ $genreImage = [
   }
   .book-info .author { font-size: 11.5px; color: var(--muted); margin-bottom: 7px; }
   .book-info .genre-pill {
-    display: inline-block; font-size: 10px; font-weight: 600;
+    display: inline-block; font-size: 10px; font-weight: 700;
     padding: 2px 9px; border-radius: 20px;
-    background: rgba(52,211,153,.08); color: var(--green); border: 1px solid rgba(52,211,153,.18);
+    background: var(--green-light); color: var(--green); border: 1px solid rgba(14,168,106,.2);
   }
 
   .card-actions { padding: 8px 12px 13px; display: flex; gap: 7px; }
   .btn-edit-card {
     flex: 1; padding: 8px; font-size: 12.5px; border-radius: 8px;
-    background: rgba(251,191,36,.12); color: var(--gold);
-    border: 1px solid rgba(251,191,36,.25); font-weight: 700;
+    background: var(--gold-light); color: var(--gold);
+    border: 1.5px solid rgba(217,119,6,.25); font-weight: 700;
     cursor: pointer; transition: all .2s;
     display: flex; align-items: center; justify-content: center; gap: 5px;
   }
-  .btn-edit-card:hover { background: var(--gold); color: #000; }
+  .btn-edit-card:hover { background: var(--gold); color: #fff; }
   .btn-trash-card {
     width: 34px; height: 34px; flex-shrink: 0;
-    background: rgba(248,113,113,.1); color: var(--red);
-    border: 1px solid rgba(248,113,113,.2); border-radius: 8px;
+    background: var(--red-light); color: var(--red);
+    border: 1.5px solid rgba(224,60,60,.2); border-radius: 8px;
     font-size: 14px; cursor: pointer; transition: all .2s;
     display: flex; align-items: center; justify-content: center;
     text-decoration: none;
@@ -293,12 +308,12 @@ $genreImage = [
 
   .empty-shelf { grid-column: 1/-1; text-align: center; padding: 70px 20px; color: var(--muted); }
   .empty-shelf .icon { font-size: 52px; margin-bottom: 14px; }
-  .empty-shelf p { font-size: 15px; line-height: 1.7; }
+  .empty-shelf p { font-size: 15px; line-height: 1.7; color: var(--text2); }
 
-  /* ── EDIT MODAL ── */
+  /* EDIT MODAL */
   .modal-overlay {
     position: fixed; inset: 0; z-index: 9999;
-    background: rgba(0,0,0,.78); backdrop-filter: blur(8px);
+    background: rgba(26,35,64,0.45); backdrop-filter: blur(6px);
     display: none; align-items: center; justify-content: center; padding: 16px;
   }
   .modal-overlay.open { display: flex; animation: fadeIn .2s; }
@@ -306,44 +321,44 @@ $genreImage = [
   @keyframes slideUp { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
   .modal {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius-lg); width: 100%; max-width: 500px;
-    box-shadow: 0 30px 80px rgba(0,0,0,.7);
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 20px; width: 100%; max-width: 500px;
+    box-shadow: 0 24px 60px rgba(26,35,64,0.18);
     overflow: hidden; max-height: 93vh;
     display: flex; flex-direction: column;
     animation: slideUp .25s cubic-bezier(.34,1.1,.64,1);
   }
 
   .modal-header {
-    background: var(--card); padding: 20px 24px;
+    background: var(--card2); padding: 20px 24px;
     display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
-    border-bottom: 1px solid var(--border); flex-shrink: 0;
+    border-bottom: 1.5px solid var(--border); flex-shrink: 0;
   }
-  .modal-header h3 { font-family: 'Lora', serif; font-size: 18px; color: var(--gold); }
+  .modal-header h3 { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--gold); }
   .modal-header p  { font-size: 12px; color: var(--muted); margin-top: 3px; }
   .modal-close {
-    background: rgba(255,255,255,.06); border: 1px solid var(--border);
+    background: var(--border-light); border: 1.5px solid var(--border);
     color: var(--muted); width: 30px; height: 30px; border-radius: 8px;
     font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;
     transition: all .2s; flex-shrink: 0;
   }
-  .modal-close:hover { background: rgba(255,255,255,.12); color: var(--text); }
+  .modal-close:hover { background: var(--border); color: var(--text); }
 
   /* Preview strip inside modal */
   .modal-preview-strip {
-    background: var(--card2); border-bottom: 1px solid var(--border);
+    background: var(--card); border-bottom: 1.5px solid var(--border);
     padding: 14px 24px; display: flex; gap: 14px; align-items: center; flex-shrink: 0;
   }
   .mps-thumb {
     width: 46px; height: 58px; border-radius: 7px; overflow: hidden;
-    background: var(--card); flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-    font-size: 22px; border: 1px solid var(--border);
+    background: var(--card2); flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 22px; border: 1.5px solid var(--border);
   }
   .mps-thumb img { width: 100%; height: 100%; object-fit: cover; }
   .mps-title  { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.3; }
   .mps-author { font-size: 12px; color: var(--muted); margin-top: 2px; }
   .mps-genre  {
-    font-size: 10px; font-weight: 700; letter-spacing: .7px; text-transform: uppercase;
+    font-size: 10px; font-weight: 800; letter-spacing: .7px; text-transform: uppercase;
     color: var(--gold); margin-top: 4px;
   }
 
@@ -351,7 +366,7 @@ $genreImage = [
 
   .mfgroup { margin-bottom: 15px; }
   .mfgroup label {
-    display: block; font-size: 11px; font-weight: 700;
+    display: block; font-size: 11px; font-weight: 800;
     letter-spacing: .5px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px;
   }
   .mfgroup input, .mfgroup select, .mfgroup textarea {
@@ -362,9 +377,9 @@ $genreImage = [
   }
   .mfgroup input::placeholder, .mfgroup textarea::placeholder { color: var(--muted); opacity: .7; }
   .mfgroup input:focus, .mfgroup select:focus, .mfgroup textarea:focus {
-    border-color: var(--gold); box-shadow: 0 0 0 3px rgba(251,191,36,.12);
+    border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow);
   }
-  .mfgroup select option { background: #1a2236; }
+  .mfgroup select option { background: var(--surface); color: var(--text); }
   .mfgroup textarea { resize: vertical; min-height: 68px; }
 
   .mfrow { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
@@ -378,9 +393,9 @@ $genreImage = [
   .modal-cover-preview img { width: 100%; height: 100%; object-fit: cover; }
 
   .modal-footer {
-    padding: 14px 24px; border-top: 1px solid var(--border);
+    padding: 14px 24px; border-top: 1.5px solid var(--border);
     display: flex; gap: 10px; flex-shrink: 0;
-    background: var(--card);
+    background: var(--card2);
   }
 
   @media (max-width: 900px) {
@@ -389,13 +404,6 @@ $genreImage = [
   }
   @media (max-width: 500px) {
     .mfrow { grid-template-columns: 1fr; }
-  }
-
-  .btn-active {
-    background: rgba(255,255,255,.12);
-    border: 1px solid rgba(255,255,255,.25);
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,.1), 0 0 12px rgba(255,255,255,.08);
-    color: var(--text);
   }
 </style>
 </head>
@@ -413,9 +421,9 @@ $genreImage = [
     </div>
   </div>
   <div class="header-nav">
-    <a href="index.php" class="btn btn-ghost">Book Records</a>
+    <a href="index.php"   class="btn btn-ghost">Book Records</a>
     <a href="borrow.php"  class="btn btn-ghost">Student Kiosk</a>
-    <a href="shelves.php" class="btn btn-ghost btn-active">Shelf Manager</a>
+    <a href="shelves.php" class="btn btn-active">Shelf Manager</a>
   </div>
 </header>
 
@@ -535,7 +543,7 @@ $genreImage = [
                       data-cover="<?= htmlspecialchars($shelf['shelf_cover']  ?? '', ENT_QUOTES) ?>"
                       data-desc="<?= htmlspecialchars($shelf['shelf_desc']    ?? '', ENT_QUOTES) ?>"
                       data-stock="<?= (int)($shelf['shelf_stock'] ?? 1) ?>">
-                Edit
+                ✏️ Edit
               </button>
               <a href="shelves.php?remove=<?= $shelf['id'] ?>"
                  class="btn-trash-card"
@@ -553,7 +561,7 @@ $genreImage = [
   </div>
 </div>
 
-<!-- ── EDIT MODAL ── -->
+<!-- EDIT MODAL -->
 <div id="editModal" class="modal-overlay">
   <div class="modal" role="dialog" aria-modal="true">
     <div class="modal-header">
@@ -631,7 +639,7 @@ $genreImage = [
 <script>
 const genreImages = <?= json_encode($genreImage) ?>;
 
-/* ── Cover preview helper ── */
+/* Cover preview helper */
 function previewCover(url, previewId) {
   const el = document.getElementById(previewId);
   if (!el) return;
@@ -647,7 +655,7 @@ function previewCover(url, previewId) {
   }
 }
 
-/* ── Add form: genre default cover ── */
+/* Add form: genre default cover */
 function updateAddGenrePreview() {
   const g = document.getElementById('addGenreSelect').value;
   const coverInput = document.getElementById('addCoverInput');
@@ -657,7 +665,7 @@ function updateAddGenrePreview() {
   }
 }
 
-/* ── Edit modal live preview ── */
+/* Edit modal live preview */
 function livePreview() {
   const title  = document.getElementById('eTitle').value  || '—';
   const author = document.getElementById('eAuthor').value || '—';
@@ -680,7 +688,7 @@ function livePreview() {
   }
 }
 
-/* ── Modal open/close ── */
+/* Modal open/close */
 const modal = document.getElementById('editModal');
 
 function openModal() {
@@ -692,13 +700,12 @@ function closeModal() {
   document.body.style.overflow = '';
 }
 
-
 document.getElementById('btnModalClose').addEventListener('click',  closeModal);
 document.getElementById('btnModalCancel').addEventListener('click', closeModal);
 modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && modal.classList.contains('open')) closeModal(); });
 
-/* ── Edit buttons ── */
+/* Edit buttons */
 document.querySelectorAll('.edit-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const d = btn.dataset;
