@@ -544,6 +544,17 @@ document.getElementById('viewModal').addEventListener('click', e => {
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeModal();
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.alert, .success-banner').forEach(el => {
+    setTimeout(() => {
+      el.style.transition = 'opacity 0.5s ease';
+      el.style.opacity = '0';
+      setTimeout(() => el.remove(), 500);
+    }, 3000);
+  });
+});
+
 </script>
 </body>
 </html>
