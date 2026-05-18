@@ -438,6 +438,7 @@ $genreImage = [
     <a href="index.php"   class="btn btn-ghost">Book Records</a>
     <a href="borrow.php"  class="btn btn-ghost">Student Kiosk</a>
     <a href="shelves.php" class="btn btn-active">Shelf Manager</a>
+    <a href="students.php" class="btn btn-ghost">Student Registry</a>
   </div>
 </header>
 

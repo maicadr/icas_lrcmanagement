@@ -1,6 +1,15 @@
 <?php
 include 'db.php';
 
+// AJAX student ID check
+if (isset($_GET['check_student'])) {
+    $sno = mysqli_real_escape_string($conn, trim($_GET['check_student']));
+    $row = mysqli_fetch_assoc(mysqli_query($conn, "SELECT id FROM students WHERE student_number='$sno' LIMIT 1"));
+    header('Content-Type: application/json');
+    echo json_encode(['registered' => (bool)$row]);
+    exit;
+}
+
 $errors              = [];
 $success             = '';
 $carousel_books      = [];
@@ -29,8 +38,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     if ($duedate        === '') $errors[] = 'Due date is required.';
     if ($student_name   === '') $errors[] = 'Student name is required.';
     if ($student_block  === '') $errors[] = 'Block / Section is required.';
-    if ($student_number === '') $errors[] = 'Student number is required.';
-
+    if ($student_number === '') {
+        $errors[] = 'Student number is required.';
+    } else {
+        $sno_check = mysqli_real_escape_string($conn, $student_number);
+        $reg = mysqli_fetch_assoc(mysqli_query($conn, "SELECT id FROM students WHERE student_number='$sno_check' LIMIT 1"));
+        if (!$reg) {
+            $errors[] = 'Student ID <strong>' . htmlspecialchars($student_number) . '</strong> is not registered. Please see the librarian.';
+        }
+    }
     if (empty($errors)) {
         $t   = mysqli_real_escape_string($conn, $book_title);
         $a   = mysqli_real_escape_string($conn, $book_author);
@@ -353,6 +369,7 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
     <a href="index.php"   class="btn btn-ghost">Book Records</a>
     <a href="borrow.php"  class="btn btn-active">Student Kiosk</a>
     <a href="shelves.php" class="btn btn-ghost">Shelf Manager</a>
+    <a href="students.php" class="btn btn-ghost">Student Registry</a>
   </div>
 </header>
 
@@ -693,18 +710,44 @@ function goToStep(n) {
   else { btn.disabled=false; btn.textContent='Continue →'; btn.style.background=btn.style.opacity=btn.style.cursor=''; btn.className='btn btn-next'; }
 }
 
-function validateStep(n) {
+async function validateStep(n) {
   const errEl = document.getElementById('modalErrors'); errEl.innerHTML = '';
   const errs = [];
-  if (n===1) { if (!document.getElementById('sName').value.trim()) errs.push('Full name is required.'); if (!document.getElementById('sBlock').value.trim()) errs.push('Block / Section is required.'); if (!document.getElementById('sNumber').value.trim()) errs.push('Student number is required.'); }
-  else if (n===2) { const b=document.getElementById('dBorrow').value, d=document.getElementById('dDue').value; if (!b) errs.push('Borrow date is required.'); if (!d) errs.push('Due date is required.'); if (b&&d&&d<=b) errs.push('Due date must be after the borrow date.'); }
-  if (errs.length) { errEl.innerHTML=`<div class="modal-errors"><ul>${errs.map(e=>`<li>${e}</li>`).join('')}</ul></div>`; return false; }
-  return true;
+  if (n===1) {
+    if (!document.getElementById('sName').value.trim()) errs.push('Full name is required.');
+    if (!document.getElementById('sBlock').value.trim()) errs.push('Block / Section is required.');
+    const snum = document.getElementById('sNumber').value.trim();
+    if (!snum) {
+      errs.push('Student number is required.');
+    } else {
+      // Check against the registry via AJAX
+      try {
+        const res  = await fetch(`borrow.php?check_student=${encodeURIComponent(snum)}`);
+        const data = await res.json();
+        if (!data.registered) {
+          errs.push(`Student ID <strong>${snum}</strong> is not registered. Please see the librarian.`);
+        }
+      } catch(e) {
+        errs.push('Could not verify student ID. Please try again.');
+      }
+    }
+  }
+  else if (n===2) {
+    const b=document.getElementById('dBorrow').value, d=document.getElementById('dDue').value;
+    if (!b) errs.push('Borrow date is required.');
+    if (!d) errs.push('Due date is required.');
+    if (b&&d&&d<=b) errs.push('Due date must be after the borrow date.');
+  }
+  if (errs.length) {
+  errEl.innerHTML=`<div class="modal-errors"><ul>${errs.map(e=>`<li>${e}</li>`).join('')}</ul></div>`;
+  setTimeout(() => { errEl.innerHTML = ''; }, 3000);
+  return false;
+}
 }
 
-function nextStep() {
+async function nextStep() {
   if (currentStep===3) { document.getElementById('fBorrowed').value=document.getElementById('dBorrow').value; document.getElementById('fDue').value=document.getElementById('dDue').value; document.getElementById('fStudentName').value=document.getElementById('sName').value.trim(); document.getElementById('fStudentBlock').value=document.getElementById('sBlock').value.trim(); document.getElementById('fStudentNumber').value=document.getElementById('sNumber').value.trim(); document.getElementById('borrowForm').submit(); return; }
-  if (currentStep!==0 && !validateStep(currentStep)) return;
+  if (currentStep!==0 && !(await validateStep(currentStep))) return;
   if (currentStep===2) populateSummary();
   goToStep(currentStep+1);
 }
