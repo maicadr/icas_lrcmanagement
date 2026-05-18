@@ -130,8 +130,17 @@ if (count($popular_books) > 0 || count($new_books) > 0) {
     $carousel_books = [];
 }
 
-$genres      = array_unique(array_column($shelf_books, 'shelf_genre'));
+// Build unique genre list by splitting comma-separated genres
+$raw_genres = array_column($shelf_books, 'shelf_genre');
+$genres = [];
+foreach ($raw_genres as $g) {
+    foreach (array_map('trim', explode(',', $g)) as $single) {
+        if ($single !== '') $genres[] = $single;
+    }
+}
+$genres = array_unique($genres);
 sort($genres);
+
 $today       = date('Y-m-d');
 $default_due = date('Y-m-d', strtotime('+7 days'));
 ?>
@@ -171,7 +180,6 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
   * { box-sizing:border-box; margin:0; padding:0; }
   body { font-family:'Nunito',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
 
-  /* HEADER */
   header { background:var(--surface); border-bottom:1.5px solid var(--border); padding:14px 32px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; position:sticky; top:0; z-index:100; box-shadow:0 2px 12px rgba(59,100,180,0.07); }
   .header-brand { display:flex; align-items:center; gap:12px; }
   .header-logo  { width:42px; height:42px; border-radius:10px; overflow:hidden; flex-shrink:0; box-shadow:0 2px 8px rgba(59,100,180,0.15); }
@@ -188,13 +196,11 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
 
   .container { max-width:1300px; margin:0 auto; padding:32px 20px; overflow:visible; }
 
-  /* SUCCESS BANNER */
   .success-banner { background:var(--green-light); border:1.5px solid rgba(14,168,106,0.25); border-radius:var(--radius); padding:16px 20px; margin-bottom:28px; display:flex; align-items:center; gap:14px; }
   .success-icon  { width:40px; height:40px; border-radius:50%; background:rgba(14,168,106,0.15); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
   .success-title { font-size:15px; font-weight:700; color:var(--green); }
   .success-sub   { font-size:13px; color:var(--muted); margin-top:2px; }
 
-  /* HERO */
   .kiosk-hero { text-align:center; margin-bottom:32px; }
   .kiosk-hero h2 { font-family:'Playfair Display',serif; font-size:30px; font-weight:700; color:var(--text); margin-bottom:8px; }
   .kiosk-hero p  { font-size:15px; color:var(--muted); }
@@ -205,13 +211,11 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
   .search-wrap input:focus { border-color:var(--primary); box-shadow:0 0 0 4px var(--primary-glow); }
   .search-clear { position:absolute; right:14px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--muted); font-size:18px; cursor:pointer; display:none; padding:4px; line-height:1; }
 
-  /* GENRE TABS */
   .genre-tabs { display:flex; gap:7px; flex-wrap:wrap; justify-content:center; margin-bottom:28px; }
   .genre-tab  { padding:6px 15px; border-radius:20px; font-size:12.5px; font-weight:700; border:1.5px solid var(--border); background:var(--surface); color:var(--muted); cursor:pointer; transition:all .2s; user-select:none; }
   .genre-tab:hover  { border-color:var(--primary); color:var(--primary); background:var(--primary-light); }
   .genre-tab.active { background:var(--primary); color:#fff; border-color:var(--primary); box-shadow:0 2px 8px rgba(59,125,216,0.25); }
 
-  /* BOOKS GRID */
   .books-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(175px,1fr)); gap:20px; }
   .book-card  { background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; cursor:pointer; transition:transform .25s,box-shadow .25s,border-color .25s; position:relative; box-shadow:var(--shadow); }
   .book-card:hover { transform:translateY(-6px) scale(1.015); box-shadow:var(--shadow-md),0 0 0 1.5px var(--primary); border-color:var(--primary); }
@@ -227,16 +231,15 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
   .book-meta { padding:13px 14px 15px; }
   .book-meta .bm-title  { font-size:13.5px; font-weight:700; line-height:1.35; margin-bottom:3px; color:var(--text); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
   .book-meta .bm-author { font-size:12px; color:var(--muted); margin-bottom:8px; }
+  .book-meta .genre-pills-display { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:6px; }
   .book-meta .bm-genre  { font-size:10.5px; font-weight:700; padding:2px 9px; border-radius:20px; background:var(--green-light); color:var(--green); border:1px solid rgba(14,168,106,.2); display:inline-block; }
 
-  /* EMPTY */
   .empty-kiosk { text-align:center; padding:90px 20px; color:var(--muted); }
   .empty-kiosk .e-icon { font-size:64px; margin-bottom:16px; }
   .empty-kiosk h3 { font-size:19px; color:var(--text); margin-bottom:8px; font-family:'Playfair Display',serif; }
   .empty-kiosk p  { font-size:14px; }
   .no-results { grid-column:1/-1; text-align:center; padding:50px 20px; color:var(--muted); font-size:14px; }
 
-  /* CAROUSEL */
   .carousel-section { margin-bottom:36px; }
   .carousel-section h3 { font-family:'Playfair Display',serif; font-size:18px; font-weight:700; color:var(--text); margin-bottom:16px; display:flex; align-items:center; gap:10px; }
   .carousel-wrap { position:relative; padding:24px 52px; margin:0 -20px; overflow:visible; }
@@ -252,7 +255,6 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
   .carousel-overlay .co-title  { font-size:12px; font-weight:700; color:#fff; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
   .carousel-overlay .co-author { font-size:10.5px; color:rgba(255,255,255,.7); margin-top:3px; }
 
-  /* MODAL */
   .modal-overlay { display:none; position:fixed; inset:0; z-index:1000; background:rgba(26,35,64,.45); backdrop-filter:blur(8px); align-items:center; justify-content:center; padding:16px; }
   .modal-overlay.open { display:flex; animation:fadeIn .2s; }
   @keyframes fadeIn  { from{opacity:0} to{opacity:1} }
@@ -267,7 +269,6 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
   .modal-close { position:absolute; top:16px; right:18px; background:var(--border-light); border:1.5px solid var(--border); color:var(--muted); width:30px; height:30px; border-radius:8px; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .2s; line-height:1; }
   .modal-close:hover { background:var(--border); color:var(--text); }
 
-  /* STEPS */
   .modal-steps { display:flex; gap:0; border-bottom:1.5px solid var(--border); padding:0 24px; flex-shrink:0; background:var(--surface); }
   .step-tab { padding:13px 0; margin-right:24px; font-size:12px; font-weight:700; color:var(--muted); border-bottom:2px solid transparent; cursor:default; user-select:none; transition:all .2s; display:flex; align-items:center; gap:7px; white-space:nowrap; }
   .step-tab.active { color:var(--primary); border-bottom-color:var(--primary); }
@@ -282,7 +283,6 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
   @keyframes fadeSlide { from{opacity:0;transform:translateX(10px)} to{opacity:1;transform:translateX(0)} }
   .step-heading { font-size:13.5px; font-weight:700; color:var(--text); margin-bottom:16px; display:flex; align-items:center; gap:8px; }
 
-  /* FORM FIELDS */
   .field-row   { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
   .field-group { margin-bottom:15px; }
   .field-group label { display:flex; align-items:center; justify-content:space-between; font-size:11px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; color:var(--muted); margin-bottom:7px; }
@@ -293,7 +293,6 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
   .field-group select option { background:var(--surface); color:var(--text); }
   .date-hint { font-size:11.5px; color:var(--muted); margin-top:5px; }
 
-  /* DATE RANGE VIZ */
   .date-range-viz { background:var(--card); border:1.5px solid var(--border); border-radius:10px; padding:14px 16px; margin-bottom:16px; display:flex; align-items:center; }
   .drv-item { flex:1; text-align:center; }
   .drv-item .drv-label { font-size:10px; text-transform:uppercase; letter-spacing:.8px; color:var(--muted); font-weight:700; margin-bottom:4px; }
@@ -302,18 +301,15 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
   .drv-sep  { flex:none; padding:0 12px; color:var(--muted); font-size:18px; font-weight:300; }
   .drv-days { background:var(--primary-light); border-radius:20px; padding:2px 10px; font-size:11.5px; font-weight:700; color:var(--primary); text-align:center; margin-top:4px; white-space:nowrap; }
 
-  /* ERRORS */
   .modal-errors { background:var(--red-light); border:1.5px solid rgba(224,60,60,.25); border-radius:9px; padding:12px 14px; margin-bottom:16px; font-size:13px; color:var(--red); }
   .modal-errors ul { margin:6px 0 0 16px; }
 
-  /* MODAL NAV */
   .modal-nav { display:flex; gap:10px; padding:0 24px 22px; flex-shrink:0; }
   .modal-nav .btn { flex:1; justify-content:center; padding:13px; font-size:14px; }
   .btn-next   { background:var(--primary); color:#fff; }
   .btn-prev   { background:var(--card2); color:var(--text2); border:1.5px solid var(--border); flex:none; padding:13px 18px; }
   .btn-submit { background:linear-gradient(135deg,var(--green),#059669); color:#fff; font-size:15px; font-weight:700; }
 
-  /* SUMMARY CARDS */
   .summary-card { background:var(--card); border:1.5px solid var(--border); border-radius:10px; overflow:hidden; margin-bottom:14px; }
   .sc-header { background:var(--card2); padding:10px 16px; font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.8px; color:var(--muted); border-bottom:1.5px solid var(--border); }
   .sc-body   { padding:14px 16px; }
@@ -323,12 +319,10 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
   .sc-val    { font-size:13px; font-weight:700; color:var(--text); text-align:right; }
   .sc-badge  { display:inline-block; padding:2px 10px; border-radius:20px; font-size:11px; font-weight:700; background:var(--gold-light); color:var(--gold); border:1px solid rgba(217,119,6,.25); }
 
-  /* ABOUT PANEL */
   .about-desc-box { background:var(--card); border:1.5px solid var(--border); border-radius:10px; padding:16px; margin-bottom:16px; font-size:14px; color:var(--text2); line-height:1.7; }
   .about-stock-box { display:flex; align-items:center; gap:10px; background:var(--card); border:1.5px solid var(--border); border-radius:10px; padding:14px 16px; }
   .about-stock-box .asl { font-size:11px; text-transform:uppercase; letter-spacing:.7px; color:var(--muted); font-weight:700; margin-bottom:3px; }
 
-  /* FOOTER */
   .site-footer { text-align:center; padding:28px 20px 20px; font-size:12px; color:var(--muted); border-top:1.5px solid var(--border); margin-top:40px; }
   .site-footer a { color:var(--primary); text-decoration:none; font-weight:700; }
 
@@ -402,7 +396,8 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
         <div class="carousel-track-outer">
           <div class="carousel-track" id="carouselTrack">
             <?php foreach ($carousel_books as $sb):
-              $emoji      = $genreEmoji[$sb['shelf_genre']] ?? '';
+              $firstGenre = trim(explode(',', $sb['shelf_genre'])[0]);
+              $emoji      = $genreEmoji[$firstGenre] ?? '📖';
               $isFeatured = trim(strtolower($sb['shelf_title'])) === trim(strtolower($most_borrowed_title));
               $isNew = $sb['borrow_count'] === 0
                     && !empty($sb['date_added'])
@@ -448,7 +443,7 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
                             color:<?= $isFeatured ? '#d97706' : 'rgba(255,255,255,.85)' ?>;
                             border:1px solid <?= $isFeatured ? 'rgba(217,119,6,.4)' : 'rgba(255,255,255,.18)' ?>;
                             border-radius:20px;padding:2px 9px;display:inline-block;">
-                  <?= $isFeatured ? 'Trending' : htmlspecialchars($sb['shelf_genre']) ?>
+                  <?= $isFeatured ? 'Trending' : htmlspecialchars($firstGenre) ?>
                 </div>
               </div>
             </div>
@@ -470,8 +465,10 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
 
     <div class="books-grid" id="booksGrid">
       <?php foreach ($shelf_books as $sb):
-        $emoji = $genreEmoji[$sb['shelf_genre']] ?? '';
+        $firstGenre = trim(explode(',', $sb['shelf_genre'])[0]);
+        $emoji = $genreEmoji[$firstGenre] ?? '📖';
         $stock = (int)($sb['shelf_stock'] ?? 1);
+        $genrePills = array_filter(array_map('trim', explode(',', $sb['shelf_genre'])));
       ?>
       <div class="book-card"
            data-title="<?= htmlspecialchars($sb['shelf_title'],  ENT_QUOTES) ?>"
@@ -486,11 +483,11 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
           <?php if (!empty($sb['shelf_cover'])): ?>
             <img src="<?= htmlspecialchars($sb['shelf_cover']) ?>"
                  alt="<?= htmlspecialchars($sb['shelf_title']) ?>"
-                 onerror="this.parentNode.innerHTML='<div class=\'cover-placeholder\'><div class=\'cp-emoji\'><?= $emoji ?></div><div class=\'cp-genre\'><?= htmlspecialchars($sb['shelf_genre'], ENT_QUOTES) ?></div></div>'">
+                 onerror="this.parentNode.innerHTML='<div class=\'cover-placeholder\'><div class=\'cp-emoji\'><?= $emoji ?></div><div class=\'cp-genre\'><?= htmlspecialchars($firstGenre, ENT_QUOTES) ?></div></div>'">
           <?php else: ?>
             <div class="cover-placeholder">
               <div class="cp-emoji"><?= $emoji ?></div>
-              <div class="cp-genre"><?= htmlspecialchars($sb['shelf_genre']) ?></div>
+              <div class="cp-genre"><?= htmlspecialchars($firstGenre) ?></div>
             </div>
           <?php endif; ?>
           <div class="borrow-hint"><span>Tap to Borrow</span></div>
@@ -499,7 +496,11 @@ $default_due = date('Y-m-d', strtotime('+7 days'));
           <div class="bm-title"><?= htmlspecialchars($sb['shelf_title']) ?></div>
           <div class="bm-author">by <?= htmlspecialchars($sb['shelf_author']) ?></div>
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:6px;">
-            <span class="bm-genre"><?= htmlspecialchars($sb['shelf_genre']) ?></span>
+            <div class="genre-pills-display">
+              <?php foreach ($genrePills as $gp): ?>
+                <span class="bm-genre"><?= htmlspecialchars($gp) ?></span>
+              <?php endforeach; ?>
+            </div>
             <?php if ($stock > 0): ?>
               <span style="font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:20px;background:var(--green-light);color:var(--green);border:1px solid rgba(14,168,106,.2);">
                 Available · <?= $stock ?> <?= $stock === 1 ? 'copy' : 'copies' ?>
@@ -733,14 +734,53 @@ function updateDateViz() {
 function formatDate(s) { if (!s) return '—'; const d=new Date(s+'T00:00:00'); return d.toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}); }
 
 function filterBooks() {
-  const q=document.getElementById('searchInput').value.toLowerCase().trim();
-  document.getElementById('searchClear').style.display = q?'block':'none';
-  const c=document.getElementById('carouselSection'); if (c) c.style.display=q?'none':'';
-  applyFilters(q,activeGenre);
+  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+  document.getElementById('searchClear').style.display = q ? 'block' : 'none';
+  const c = document.getElementById('carouselSection');
+  if (c) c.style.display = q ? 'none' : '';
+
+  // Reset genre filter when typing in search
+  if (q) {
+    activeGenre = 'all';
+    document.querySelectorAll('.genre-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector('.genre-tab').classList.add('active');
+  }
+
+  applyFilters(q, activeGenre);
 }
-function clearSearch() { document.getElementById('searchInput').value=''; document.getElementById('searchClear').style.display='none'; const c=document.getElementById('carouselSection'); if(c) c.style.display=''; applyFilters('',activeGenre); }
-function filterByGenre(genre,tab) { activeGenre=genre; document.querySelectorAll('.genre-tab').forEach(t=>t.classList.remove('active')); tab.classList.add('active'); const q=document.getElementById('searchInput').value.toLowerCase().trim(); const c=document.getElementById('carouselSection'); if(c) c.style.display=q?'none':''; applyFilters(q,genre); }
-function applyFilters(q,genre) { const cards=document.querySelectorAll('#booksGrid .book-card'); let visible=0; cards.forEach(c=>{ const gm=genre==='all'||c.dataset.genre===genre; const sm=(c.dataset.title+' '+c.dataset.author+' '+c.dataset.genre).toLowerCase().includes(q); const show=gm&&sm; c.style.display=show?'':'none'; if(show) visible++; }); document.getElementById('noResults').style.display=visible===0?'block':'none'; }
+
+function clearSearch() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('searchClear').style.display = 'none';
+  const c = document.getElementById('carouselSection');
+  if (c) c.style.display = '';
+  applyFilters('', activeGenre);
+}
+
+function filterByGenre(genre, tab) {
+  activeGenre = genre;
+  document.querySelectorAll('.genre-tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+  const c = document.getElementById('carouselSection');
+  if (c) c.style.display = q ? 'none' : '';
+  applyFilters(q, genre);
+}
+
+function applyFilters(q, genre) {
+  const cards = document.querySelectorAll('#booksGrid .book-card');
+  let visible = 0;
+  cards.forEach(c => {
+    // For multi-genre: split by comma and check if any genre matches
+    const cardGenres = c.dataset.genre.split(',').map(g => g.trim());
+    const gm = genre === 'all' || cardGenres.includes(genre);
+    const sm = (c.dataset.title + ' ' + c.dataset.author + ' ' + c.dataset.genre).toLowerCase().includes(q);
+    const show = gm && sm;
+    c.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+  document.getElementById('noResults').style.display = visible === 0 ? 'block' : 'none';
+}
 
 let carouselIndex=0; const itemWidth=156;
 function carouselMove(dir) { const track=document.getElementById('carouselTrack'); if(!track) return; const items=track.querySelectorAll('.carousel-item'); const visible=Math.floor(track.parentElement.offsetWidth/itemWidth); const maxIndex=Math.max(0,items.length-visible); carouselIndex=Math.min(Math.max(carouselIndex+dir,0),maxIndex); track.style.transform=`translateX(-${carouselIndex*itemWidth}px)`; }
@@ -766,6 +806,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }, { passive: false });
 });
+
+document.querySelectorAll('.alert, .success-banner').forEach(el => {
+  setTimeout(() => {
+    el.style.transition = 'opacity 0.5s ease';
+    el.style.opacity = '0';
+    setTimeout(() => el.remove(), 500);
+  }, 3000);
+});
+
 </script>
 </body>
 </html>

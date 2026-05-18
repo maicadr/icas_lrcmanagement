@@ -7,13 +7,14 @@ $success = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'add_shelf') {
     $shelf_title  = trim($_POST['shelf_title']  ?? '');
     $shelf_author = trim($_POST['shelf_author'] ?? '');
-    $shelf_genre  = trim($_POST['shelf_genre']  ?? '');
+    $shelf_genre_arr = array_filter(array_map('trim', (array)($_POST['shelf_genre'] ?? [])));
+    $shelf_genre  = implode(', ', $shelf_genre_arr);
     $shelf_cover  = trim($_POST['shelf_cover']  ?? '');
     $shelf_desc   = trim($_POST['shelf_desc']   ?? '');
 
     if ($shelf_title  === '') $errors[] = 'Book title is required.';
     if ($shelf_author === '') $errors[] = 'Author is required.';
-    if ($shelf_genre  === '') $errors[] = 'Genre is required.';
+    if ($shelf_genre  === '') $errors[] = 'At least one genre is required.';
 
     if (empty($errors)) {
         $t = mysqli_real_escape_string($conn, $shelf_title);
@@ -34,17 +35,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $edit_id      = (int)($_POST['edit_id']     ?? 0);
     $shelf_title  = trim($_POST['shelf_title']  ?? '');
     $shelf_author = trim($_POST['shelf_author'] ?? '');
-    $shelf_genre  = trim($_POST['shelf_genre']  ?? '');
+    $shelf_genre_arr = array_filter(array_map('trim', (array)($_POST['shelf_genre'] ?? [])));
+    $shelf_genre  = implode(', ', $shelf_genre_arr);
     $shelf_cover  = trim($_POST['shelf_cover']  ?? '');
     $shelf_desc   = trim($_POST['shelf_desc']   ?? '');
-    $shelf_stock = (int)($_POST['shelf_stock'] ?? 1);
+    $shelf_stock  = (int)($_POST['shelf_stock'] ?? 1);
 
     if ($shelf_title  === '') $errors[] = 'Book title is required.';
     if ($shelf_author === '') $errors[] = 'Author is required.';
-    if ($shelf_genre  === '') $errors[] = 'Genre is required.';
+    if ($shelf_genre  === '') $errors[] = 'At least one genre is required.';
 
     if (empty($errors) && $edit_id > 0) {
-        // Grab the old title before updating so we can sync the books table
         $old_row   = mysqli_fetch_assoc(mysqli_query($conn, "SELECT shelf_title FROM shelf_books WHERE id=$edit_id LIMIT 1"));
         $old_title = $old_row ? mysqli_real_escape_string($conn, $old_row['shelf_title']) : '';
 
@@ -56,9 +57,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $s = $shelf_stock;
         $sql = "UPDATE shelf_books SET shelf_title='$t', shelf_author='$a', shelf_genre='$g', shelf_cover='$c', shelf_desc='$d', shelf_stock=$s WHERE id=$edit_id";
         if (mysqli_query($conn, $sql)) {
-            // Sync book records: match case-insensitively so minor spelling
-            // differences (e.g. "Kimitsu No" vs "Kimetsu Na") still get updated.
-            // We match LOWER(TRIM(book_title)) against LOWER(TRIM(old_title)).
             if ($old_title !== '') {
                 $old_lower = strtolower(trim($old_row['shelf_title']));
                 $old_lower_esc = mysqli_real_escape_string($conn, $old_lower);
@@ -147,7 +145,6 @@ $genreImage = [
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
-  /* HEADER */
   header {
     background: var(--surface); border-bottom: 1.5px solid var(--border);
     padding: 14px 32px; display: flex; align-items: center; justify-content: space-between;
@@ -179,7 +176,6 @@ $genreImage = [
   .container { max-width: 1380px; margin: 0 auto; padding: 28px 20px; }
   .layout    { display: grid; grid-template-columns: 370px 1fr; gap: 28px; align-items: start; }
 
-  /* ALERTS */
   .alert {
     padding: 13px 18px; border-radius: 10px; margin-bottom: 22px;
     font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 10px;
@@ -188,7 +184,6 @@ $genreImage = [
   .alert-danger  { background: var(--red-light);   color: var(--red);   border-left: 3px solid var(--red); }
   .alert-danger ul { margin: 6px 0 0 18px; }
 
-  /* ADD FORM CARD */
   .form-card {
     background: var(--surface); border: 1.5px solid var(--border);
     border-radius: var(--radius-lg); overflow: hidden;
@@ -224,6 +219,22 @@ $genreImage = [
   .fgroup textarea { resize: vertical; min-height: 68px; }
   .hint { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
 
+  /* GENRE PILL CHECKBOXES */
+  .genre-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .genre-pill-label {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 12px; border-radius: 20px;
+    border: 1.5px solid var(--border); background: var(--card);
+    font-size: 12px; font-weight: 700; color: var(--text2);
+    cursor: pointer; transition: all .18s; user-select: none;
+  }
+  .genre-pill-label:hover { border-color: var(--gold); color: var(--gold); }
+  .genre-pill-label.checked {
+    background: var(--gold); color: #fff; border-color: var(--gold);
+    box-shadow: 0 2px 8px rgba(217,119,6,0.25);
+  }
+  .genre-pill-label input { display: none; }
+
   .cover-preview-box {
     width: 100%; height: 86px; border-radius: 9px;
     background: var(--card); border: 2px dashed var(--border);
@@ -234,7 +245,6 @@ $genreImage = [
   .cover-preview-box img { width: 100%; height: 100%; object-fit: cover; }
   .cover-preview-box.has-img { border-color: rgba(217,119,6,.4); }
 
-  /* SHELF GRID */
   .shelf-header {
     display: flex; align-items: center; justify-content: space-between;
     margin-bottom: 20px; flex-wrap: wrap; gap: 10px;
@@ -286,7 +296,8 @@ $genreImage = [
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   }
   .book-info .author { font-size: 11.5px; color: var(--muted); margin-bottom: 7px; }
-  .book-info .genre-pill {
+  .book-info .genre-pills-display { display: flex; flex-wrap: wrap; gap: 4px; }
+  .book-info .genre-pill-display {
     display: inline-block; font-size: 10px; font-weight: 700;
     padding: 2px 9px; border-radius: 20px;
     background: var(--green-light); color: var(--green); border: 1px solid rgba(14,168,106,.2);
@@ -315,7 +326,6 @@ $genreImage = [
   .empty-shelf .icon { font-size: 52px; margin-bottom: 14px; }
   .empty-shelf p { font-size: 15px; line-height: 1.7; color: var(--text2); }
 
-  /* EDIT MODAL */
   .modal-overlay {
     position: fixed; inset: 0; z-index: 9999;
     background: rgba(26,35,64,0.45); backdrop-filter: blur(6px);
@@ -349,7 +359,6 @@ $genreImage = [
   }
   .modal-close:hover { background: var(--border); color: var(--text); }
 
-  /* Preview strip inside modal */
   .modal-preview-strip {
     background: var(--card); border-bottom: 1.5px solid var(--border);
     padding: 14px 24px; display: flex; gap: 14px; align-items: center; flex-shrink: 0;
@@ -370,7 +379,7 @@ $genreImage = [
   .modal-body { padding: 22px; overflow-y: auto; }
 
   .mfgroup { margin-bottom: 15px; }
-  .mfgroup label {
+  .mfgroup label.field-label {
     display: block; font-size: 11px; font-weight: 800;
     letter-spacing: .5px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px;
   }
@@ -460,8 +469,8 @@ $genreImage = [
           <input type="hidden" name="action" value="add_shelf">
 
           <div class="fgroup">
-              <label>Stock / Copies</label>
-              <input type="number" name="shelf_stock" min="1" value="1" placeholder="e.g. 3">
+            <label>Stock / Copies</label>
+            <input type="number" name="shelf_stock" min="1" value="1" placeholder="e.g. 3">
           </div>
 
           <div class="fgroup">
@@ -472,13 +481,19 @@ $genreImage = [
             <label>Author *</label>
             <input type="text" name="shelf_author" placeholder="e.g. Harper Lee" required autocomplete="off">
           </div>
+
           <div class="fgroup">
-            <label>Genre *</label>
-            <select name="shelf_genre" id="addGenreSelect" required onchange="updateAddGenrePreview()">
-              <option value="">— Select Genre —</option>
-              <?php foreach ($genres as $g) echo "<option value=\"$g\">$g</option>"; ?>
-            </select>
+            <label>Genre * <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">(pick one or more)</span></label>
+            <div class="genre-pills" id="addGenrePills">
+              <?php foreach ($genres as $g): ?>
+                <label class="genre-pill-label" onclick="togglePill(this)">
+                  <input type="checkbox" name="shelf_genre[]" value="<?= htmlspecialchars($g) ?>">
+                  <?= htmlspecialchars($g) ?>
+                </label>
+              <?php endforeach; ?>
+            </div>
           </div>
+
           <div class="fgroup">
             <label>Cover Image URL <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">(optional)</span></label>
             <input type="url" name="shelf_cover" id="addCoverInput" placeholder="https://…/cover.jpg" oninput="previewCover(this.value,'addCoverPreview')">
@@ -517,18 +532,20 @@ $genreImage = [
           </div>
         <?php else: ?>
           <?php foreach ($shelf_books as $shelf):
-            $fallbackImg = $genreImage[$shelf['shelf_genre']] ?? $genreImage['Other'];
+            $firstGenre  = trim(explode(',', $shelf['shelf_genre'])[0]);
+            $fallbackImg = $genreImage[$firstGenre] ?? $genreImage['Other'];
+            $genrePills  = array_filter(array_map('trim', explode(',', $shelf['shelf_genre'])));
           ?>
           <div class="book-card">
             <div class="book-cover-area">
               <?php if (!empty($shelf['shelf_cover'])): ?>
                 <img src="<?= htmlspecialchars($shelf['shelf_cover']) ?>"
                      alt="<?= htmlspecialchars($shelf['shelf_title']) ?>"
-                     onerror="this.parentNode.innerHTML='<div class=\'genre-cover-wrap\'><img class=\'genre-cover-img\' src=\'<?= htmlspecialchars($fallbackImg, ENT_QUOTES) ?>\' alt=\'cover\'><div class=\'genre-cover-label\'><?= htmlspecialchars($shelf['shelf_genre'], ENT_QUOTES) ?></div></div>'">
+                     onerror="this.parentNode.innerHTML='<div class=\'genre-cover-wrap\'><img class=\'genre-cover-img\' src=\'<?= htmlspecialchars($fallbackImg, ENT_QUOTES) ?>\' alt=\'cover\'><div class=\'genre-cover-label\'><?= htmlspecialchars($firstGenre, ENT_QUOTES) ?></div></div>'">
               <?php else: ?>
                 <div class="genre-cover-wrap">
                   <img class="genre-cover-img" src="<?= htmlspecialchars($fallbackImg) ?>" alt="">
-                  <div class="genre-cover-label"><?= htmlspecialchars($shelf['shelf_genre']) ?></div>
+                  <div class="genre-cover-label"><?= htmlspecialchars($firstGenre) ?></div>
                 </div>
               <?php endif; ?>
             </div>
@@ -536,7 +553,11 @@ $genreImage = [
             <div class="book-info">
               <div class="title"><?= htmlspecialchars($shelf['shelf_title']) ?></div>
               <div class="author">by <?= htmlspecialchars($shelf['shelf_author']) ?></div>
-              <span class="genre-pill"><?= htmlspecialchars($shelf['shelf_genre']) ?></span>
+              <div class="genre-pills-display">
+                <?php foreach ($genrePills as $gp): ?>
+                  <span class="genre-pill-display"><?= htmlspecialchars($gp) ?></span>
+                <?php endforeach; ?>
+              </div>
             </div>
 
             <div class="card-actions">
@@ -577,7 +598,6 @@ $genreImage = [
       <button class="modal-close" id="btnModalClose">✕</button>
     </div>
 
-    <!-- Live preview strip -->
     <div class="modal-preview-strip">
       <div class="mps-thumb" id="mpsThumb"></div>
       <div>
@@ -594,39 +614,41 @@ $genreImage = [
 
         <div class="mfrow">
           <div class="mfgroup">
-            <label>Book Title *</label>
+            <label class="field-label">Book Title *</label>
             <input type="text" name="shelf_title" id="eTitle" placeholder="Book title" required oninput="livePreview()">
           </div>
           <div class="mfgroup">
-            <label>Author *</label>
+            <label class="field-label">Author *</label>
             <input type="text" name="shelf_author" id="eAuthor" placeholder="Author name" required oninput="livePreview()">
           </div>
         </div>
 
         <div class="mfgroup">
-          <label>Genre *</label>
-          <select name="shelf_genre" id="eGenre" required onchange="livePreview()">
-            <option value="">— Select Genre —</option>
+          <label class="field-label">Genre * <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">(pick one or more)</span></label>
+          <div class="genre-pills" id="editGenrePills">
             <?php foreach ($genres as $g): ?>
-              <option value="<?= htmlspecialchars($g) ?>"><?= htmlspecialchars($g) ?></option>
+              <label class="genre-pill-label" onclick="toggleEditPill(this)">
+                <input type="checkbox" name="shelf_genre[]" value="<?= htmlspecialchars($g) ?>">
+                <?= htmlspecialchars($g) ?>
+              </label>
             <?php endforeach; ?>
-          </select>
+          </div>
         </div>
 
         <div class="mfgroup">
-          <label>Stock / Copies</label>
+          <label class="field-label">Stock / Copies</label>
           <input type="number" name="shelf_stock" id="eStock" min="1" placeholder="e.g. 3">
         </div>
 
         <div class="mfgroup">
-          <label>Cover Image URL <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">(optional)</span></label>
+          <label class="field-label">Cover Image URL <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">(optional)</span></label>
           <input type="url" name="shelf_cover" id="eCover" placeholder="https://…/cover.jpg"
                  oninput="previewCover(this.value,'editCoverPreview'); livePreview()">
           <div class="modal-cover-preview" id="editCoverPreview"><span>No cover image</span></div>
         </div>
 
         <div class="mfgroup">
-          <label>Short Description <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">(optional)</span></label>
+          <label class="field-label">Short Description <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--muted)">(optional)</span></label>
           <textarea name="shelf_desc" id="eDesc" placeholder="Brief synopsis or librarian notes…"></textarea>
         </div>
       </form>
@@ -644,7 +666,6 @@ $genreImage = [
 <script>
 const genreImages = <?= json_encode($genreImage) ?>;
 
-/* Cover preview helper */
 function previewCover(url, previewId) {
   const el = document.getElementById(previewId);
   if (!el) return;
@@ -660,26 +681,36 @@ function previewCover(url, previewId) {
   }
 }
 
-/* Add form: genre default cover */
-function updateAddGenrePreview() {
-  const g = document.getElementById('addGenreSelect').value;
-  const coverInput = document.getElementById('addCoverInput');
-  if (!coverInput.value && g) {
-    const fallback = genreImages[g] || '';
-    previewCover(fallback, 'addCoverPreview');
-  }
+/* Toggle pill for ADD form */
+function togglePill(label) {
+  const cb = label.querySelector('input');
+  // The click on the label will fire before this, toggling the checkbox automatically
+  // We just need to update the visual after a tiny delay
+  setTimeout(() => {
+    label.classList.toggle('checked', cb.checked);
+  }, 0);
 }
 
-/* Edit modal live preview */
+/* Toggle pill for EDIT modal */
+function toggleEditPill(label) {
+  setTimeout(() => {
+    const cb = label.querySelector('input');
+    label.classList.toggle('checked', cb.checked);
+    livePreview();
+  }, 0);
+}
+
 function livePreview() {
   const title  = document.getElementById('eTitle').value  || '—';
   const author = document.getElementById('eAuthor').value || '—';
-  const genre  = document.getElementById('eGenre').value  || '—';
   const cover  = document.getElementById('eCover').value;
+
+  const checkedGenres = [...document.querySelectorAll('#editGenrePills input:checked')].map(cb => cb.value);
+  const genreText = checkedGenres.length ? checkedGenres.join(', ') : '—';
 
   document.getElementById('mpsTitle').textContent  = title;
   document.getElementById('mpsAuthor').textContent = 'by ' + author;
-  document.getElementById('mpsGenre').textContent  = genre;
+  document.getElementById('mpsGenre').textContent  = genreText;
 
   const thumb = document.getElementById('mpsThumb');
   if (cover && cover.trim()) {
@@ -693,24 +724,16 @@ function livePreview() {
   }
 }
 
-/* Modal open/close */
 const modal = document.getElementById('editModal');
 
-function openModal() {
-  modal.classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-function closeModal() {
-  modal.classList.remove('open');
-  document.body.style.overflow = '';
-}
+function openModal()  { modal.classList.add('open');    document.body.style.overflow = 'hidden'; }
+function closeModal() { modal.classList.remove('open'); document.body.style.overflow = ''; }
 
 document.getElementById('btnModalClose').addEventListener('click',  closeModal);
 document.getElementById('btnModalCancel').addEventListener('click', closeModal);
 modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && modal.classList.contains('open')) closeModal(); });
 
-/* Edit buttons */
 document.querySelectorAll('.edit-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const d = btn.dataset;
@@ -722,8 +745,13 @@ document.querySelectorAll('.edit-btn').forEach(btn => {
     document.getElementById('eCover').value  = d.cover  || '';
     document.getElementById('eStock').value  = d.stock  || '1';
 
-    const sel = document.getElementById('eGenre');
-    for (let i = 0; i < sel.options.length; i++) sel.options[i].selected = sel.options[i].value === d.genre;
+    // Pre-check saved genres
+    const savedGenres = (d.genre || '').split(',').map(g => g.trim());
+    document.querySelectorAll('#editGenrePills .genre-pill-label').forEach(label => {
+      const cb = label.querySelector('input');
+      cb.checked = savedGenres.includes(cb.value);
+      label.classList.toggle('checked', cb.checked);
+    });
 
     previewCover(d.cover || '', 'editCoverPreview');
     livePreview();
@@ -732,6 +760,17 @@ document.querySelectorAll('.edit-btn').forEach(btn => {
     setTimeout(() => document.getElementById('eTitle').focus(), 120);
   });
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.alert').forEach(alert => {
+    setTimeout(() => {
+      alert.style.transition = 'opacity 0.5s ease';
+      alert.style.opacity = '0';
+      setTimeout(() => alert.remove(), 500);
+    }, 3000);
+  });
+});
+
 </script>
 </body>
 </html>
